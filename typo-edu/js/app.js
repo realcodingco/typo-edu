@@ -218,7 +218,7 @@ toastr.options = {
                     return;
                 }
                 window.location.hash = '';
-                window.location.pathname = '/typo-edu/makeroom.html';
+                window.location.href = 'makeroom.html?mid=' + mid;
             });
 
     }
