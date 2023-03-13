@@ -10,78 +10,457 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     window.addEventListener('resize', setVh);
     setVh();
 
-    const mid = new URLSearchParams(location.search).get('mid');
     const params = new URLSearchParams(location.search);
+    const course = params.get('course'); //cid
     const bookId = params.get('book'); 
     const page = params.get('page');
-    let record = getUserData(); //학습자 데이터를 가져오고, 없으면 새로운 데이터로 시작.
-    console.log(record)
-    if(!record[bookId]) record[bookId] = {};
+    let userData, record, emulator, editSection, pageData;
 
-    BX.component(learnWindow.main).appendTo(topBox);
-    const editSection = $('.editSection');
-    BX.component(learn.lessonWindow).appendTo(editSection[0]);
-    const emulator = $('.emulator');
-    const consoleDiv = $('.consolewindow');
-    $('.editSection .fn-btn :nth-child(3)')[0].onclick = runApp;
-
-    window.consoleDiv = consoleDiv;
-    window.mid = mid;
-    window.saveUserData = saveUserData;
-    window.createContent = createComponent;
-
-    //교재 붙이기
-    if(bookId) {
-        const pageData = getBookData()[bookId].pages;
-        lessonBook(pageData).appendTo($('.lessonBook')[0]);
-        checkStudied();
-    } 
-    else {
-        $('.appTitle')[0].innerText = 'New App';
-        $('.lessonWindow').addClass('play');
-        $('.editSection > :first-child').addClass('play');
-        $('.aceEditor').addClass('play');
-        $('.emulator').addClass('play');
+    window.createComponent = createComponent;
+    if(location.pathname.includes('makeroom')) { // makeroom 페이지에서만 화면생성
+        init();
     }
 
-    const targetApp = location.hash.slice(1);
-    setTimeout(() => {
+    function init(){
+        if(!mid) {
+            toastr.error('접근 권한이 없습니다.');
+            return;
+        }
+        getUserData(function(data) {
+            userData = data;
+            record = data[course] || {};
+            if(!record[bookId]) record[bookId] = {};
+
+            BX.component(learnWindow.main).appendTo(topBox);
+            editSection = $('.editSection');
+            BX.component(learn.lessonWindow).appendTo(editSection[0]);
+            emulator = $('.emulator');
+            emulator.find('.appWindow')[0].addEventListener('mousemove', mousemove);
+            emulator.find('.appWindow')[0].addEventListener('mouseout', mouseout);
+            const consoleDiv = $('.consolewindow');
+            $('.editSection .fn-btn :nth-child(3)')[0].onclick = runApp; //실행 버튼
+
+            window.consoleDiv = consoleDiv;
+            window.saveUserData = saveUserData;
+            window.openPractice = openPractice;
+
+            //교재 붙이기
+            if(bookId) { // 교재학습모드
+                const resetButton = $('.editSection .fn-btn > div:nth-child(2)');
+                resetButton.show();
+                resetButton[0].onclick = refreshApp; //리셋 버튼
+                $.ajax({url: `./lecture/${course}/${bookId}/${bookId}.json`, dataType: "json"})
+                .done((json) => {
+                    pageData = json.pages;
+
+                    if(pageData.length == 0) {
+                        toastr.error('작성된 교재가 없습니다.');
+                        return;
+                    }
+                    lessonBook(pageData).appendTo($('.lessonBook')[0]);
+                    checkStudied();
+                })
+                .fail((xhr, status, error) => {})
+            } 
+            else { // 에디터 모드
+                $('.appTitle')[0].innerText = 'New App';
+                $('.lessonWindow').addClass('play');
+                $('.editSection > :first-child').addClass('play');
+                $('.aceEditor').addClass('play');
+                $('.emulator').addClass('play');
+            }
+
+            const targetApp = location.hash.slice(1);
+            setTimeout(() => {
+                const editor =  $('.ace_editor')[0].aceEditor;
+                if(targetApp == 'free') {
+                    $('.emulator').show();
+                }
+                else if(targetApp) {
+                    $('.emulator').show(); 
+                    const app = BX.components[targetApp];
+                    // const code = app.appCode; console.log(code, 25);
+                    editSection.find('.appTitle')[0].innerText = app.appTitle;
+                    app.bx().appendTo($('.appWindow')[0]);
+                    
+                    editor.session.setMode("ace/mode/javascript");
+                    // editor.setValue(code, 1);
+                    editor.focus();
+                    // runApp();
+                }
+                // editor.getSession().on('change', editorUpdate);
+                $(editor).on('focus', e => {
+                    clickedRunBtn = false;
+                });
+            }, 500);
+        });
+    }
+
+    /**
+     * 유형별 컨텐츠 컴포넌트 생성
+     * @param {object} unit 컴포넌트 데이터
+     * @returns 컨텐츠 컴포넌트 box
+     */
+    function createComponent(unit) {
+        let result;
+        const enter = '%250A';
+        const plus = '%252B';
+        const component = unit.comp;
+        if(component == 'check') { // 체크상자
+            let txt = unit.text;
+            if(unit.style) {
+                for(let style of unit.style) {
+                    txt = txt.replace(style.target, `<font style="${style.type}">${style.target}</font>`);
+                }
+            }
+
+            result = BX.component(lesson.check);
+            result.children()[0].innerHTML = txt;
+            
+            if(unit.id) {
+                result.children()[1].id = unit.id;
+            }
+        } 
+        else if(component == 'title') { //제목
+            result = BX.component(lesson.title).text(unit.text);
+        }
+        else if(['text', 'sub', 'sup'].includes(component)) { //텍스트
+            let txt = unit.text;
+            if(unit.style) {
+                txt = unit.text;
+                for(let style of unit.style) {
+                    txt = txt.replace(style.target, `<font style="${style.type}">${style.target}</font>`);
+                }
+            }
+
+            result = BX.component(lesson[component]).html(txt);
+        }
+        else if(component == 'par') { //문단, 가운데정렬
+            let enteredTxt = unit.text.replaceAll('\n', '<br>');
+
+            const txt = `<p style="${unit.style}">${enteredTxt}</p>`
+            result = BX.component(lesson.par).html(txt);
+        }
+        else if(component == 'link') { // 링크 : 새창열기
+            result = BX.component(lesson.link);
+            const aTag = result.find('a')[0];
+            aTag.href = unit.src;
+            aTag.innerText = unit.text;
+            aTag.style = unit.linkstyle;
+        }
+        else if(component == 'codeBox') { //카본 코드상자 (미사용)
+            let code = unit.text.replaceAll('\n', enter);
+            code = code.replaceAll('+', plus);
+            const src = `https://carbon.now.sh/embed?bg=rgba%28171%2C184%2C195%2C0%29&t=material&wt=bw&l=javascript&ds=false&dsyoff=7px&dsblur=57px&wc=${unit.tab}&wa=false&pv=0px&ph=28px&ln=true&fl=${unit.start}&fm=JetBrains+Mono&fs=18px&lh=141%25&si=false&es=1x&wm=false&code=${code}`;
+            const frame = BX.component(lesson.codeBox).height(unit.height);
+            frame[0].src = src; 
+            result = frame;  
+        }
+        else if(component == 'aceEditor') { //에디터
+            let code = unit.text;
+            result = BX.component(lesson.aceEditor).height(unit.height);
+            setTimeout(() => {
+                const editor = result.children()[0].aceEditor;
+                editor.setValue(code); 
+                editor.clearSelection();
+                editor.setReadOnly(true);
+                editor.renderer.$cursorLayer.element.style.opacity = 0; //커서 감추기
+                if(unit.start) editor.setOption("firstLineNumber", unit.start * 1)
+            }, 100);
+        } 
+        else if(component == 'direction') { // 단순 에디터 열기
+            const bgCode = unit.bgCode;
+            const title = unit.title;
+            const codeId = unit.codeId;
+            const targetLine = unit.targetLine;
+            const bg = BX.component(lesson.direction);
+            bg.children()[0].innerHTML = unit.text;
+            bg.children()[1].onclick = e => {
+                //에디터 열어주기.
+                if(e.target.value == '에디터 열기') {
+                    // location.hash = '';
+                    const editor =  $('.ace_editor')[0].aceEditor;
+                    if(bgCode || bgCode == 'clear') {
+                        editor.setValue(bgCode);
+                        if(targetLine) editor.gotoLine(targetLine);
+                    }
+                    
+                    if(title) { // 에디터 제목 삽입
+                        $('.appTitle')[0].innerText = title;
+                    }
+
+                    if(codeId) {
+                        $('.appTitle')[0].id = codeId;
+                        // pageId 전달
+                        const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
+                        $('.appTitle')[0].dataset.pid = pageId;
+
+                        if(record && record[bookId]) {
+                            const pageRecord = record[bookId][pageId];
+                            if(pageRecord && pageRecord.code) {
+                                if(pageRecord.code[codeId]) {
+                                    const codeRecord = pageRecord.code[codeId].code;
+                                    editor.setValue(codeRecord);
+                                    editor.navigateFileEnd(); //커서는 마지막 라인으로 
+                                }
+                            }
+                        }
+                    }
+
+                    $('.lessonWindow').toggleClass('half');
+                     //, inline:'end'
+                    setTimeout(() => {
+                        e.target.scrollIntoView({block:'start'});
+                        $('.lessonBook')[0].style.overflowY = 'hidden';
+                        e.target.value = 'DONE';
+                    }, 500);
+                }
+                else {
+                    $('.lessonWindow').toggleClass('half');
+                    setTimeout(() => {
+                        $('.lessonBook')[0].style.overflow = 'auto';
+                        e.target.scrollIntoView({block:'start'});
+                        e.target.value = '에디터 열기';
+                        consoleDiv.empty();
+                    }, 500);
+                }
+            }
+            result = bg;
+        }
+        else if(component == 'table') { //표
+            const table = BX.component(lesson.table);
+            table[0].style.gridTemplateColumns = `repeat(${unit.column}, 1fr)`;
+            for(let el of unit.arr) {
+                box().appendTo(table).text(el).border('0.5px solid lightgray').fontSize(15).color('white').align('center');
+            }
+            result = table;
+        }
+        else if(component == 'tableFH') {
+            result = BX.component(lesson.tableFixedHeader).width(unit.width).marginLeft(`calc((100% - ${unit.width}px) / 2)`);
+            $(result).find('.tblContent')[0].style.height = `${unit.height}px`;
+            const head = unit.headarr.split(',');
+            const content = unit.arr.split(',');
+            const column = Number(unit.column);
+            let targetRow;
+            for(let i=0; i<content.length; i++) {
+                if(i % column == 0) {
+                    targetRow = document.createElement('tr');
+                    $(result).find('tbody')[0].appendChild(targetRow);
+                }
+                const td = document.createElement('td');
+                targetRow.appendChild(td);
+                td.innerText = content[i];
+            }
+            for(let h=0; h<head.length; h++) {
+                const th = document.createElement('th');
+                const target = $(result).find('thead tr')[0];
+                target.appendChild(th);
+                th.innerText = head[h];
+            }
+        }
+        else if(component == 'tableHVH') {
+            result = BX.component(lesson.tableHorizontalVerticalHighlight).width(unit.width).marginLeft(`calc((100% - ${unit.width}px) / 2)`);
+            const content = unit.arr.split(',');
+            const column = Number(unit.column);
+            let targetRow;
+            for(let i=0; i<content.length; i++) {
+                if(i % column == 0) {
+                    targetRow = document.createElement('tr');
+                    $(result).find('tbody')[0].appendChild(targetRow);
+                }
+                const td = document.createElement('td');
+                targetRow.appendChild(td);
+                td.innerText = content[i];
+            }
+            
+        }
+        else if(component == 'appBtn') { // 앱보기 
+            const compName = unit.compName;
+            const btn = BX.component(lesson.appBtn);
+            btn[0].value = `${compName} 앱 보기`;
+            btn[0].onclick = e => {
+                $('.emulator')[0].style.display = 'block';
+                $('.appWindow').empty();
+                BX.components[compName].bx().appendTo($('.appWindow')[0]);
+            }
+            result = btn;
+        }
+        else if(component == 'practiceDirection') { // 실습 에디터 열기 버튼
+            const targetApp = unit.targetApp;
+            const codeId = unit.codeId;
+            const targetLine = unit.targetLine;
+            const bg = BX.component(lesson.practiceDirection);
+            bg.children()[0].innerHTML = unit.text;
+            bg.children()[1].onclick = e => {
+                if(e.target.value == '에디터 열기') {
+                    location.hash = targetApp;
+                    openPractice(targetApp, unit.title, unit.bgCode);
+                    const editor =  $('.ace_editor')[0].aceEditor;
+                    if(targetLine) editor.gotoLine(targetLine);
+
+                    if(codeId) {
+                        $('.appTitle')[0].id = codeId;
+                        // pageId 전달
+                        const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
+                        $('.appTitle')[0].dataset.pid = pageId;
+
+                        if(record && record[bookId]) {
+                            const pageRecord = record[bookId][pageId];
+                            if(pageRecord && pageRecord.code) {
+                                if(pageRecord.code[codeId]) {
+                                    const codeRecord = pageRecord.code[codeId].code;
+                                    editor.setValue(codeRecord);
+                                    editor.navigateFileEnd(); //커서는 마지막 라인으로 
+                                }
+                            }
+                        }
+                    }
+        
+                    $('.lessonWindow').toggleClass('half');
+                    setTimeout(() => {
+                        e.target.scrollIntoView({block:'start', inline:'end'});
+                        $('.lessonBook')[0].style.overflow = 'hidden';
+                        e.target.value = 'DONE';
+                    }, 500);
+                }
+                else {
+                    $('.lessonWindow').toggleClass('half');
+                    $('.lessonBook')[0].style.overflow = 'auto';
+                    setTimeout(() => {
+                        e.target.scrollIntoView({block:'start', inline:'end'});
+                        e.target.value = '에디터 열기';
+                        consoleDiv.empty();
+                    }, 500);
+                } 
+            }
+            result = bg;
+        }
+        else if(component == 'ending') { // 마지막 엔딩 배너
+            result = BX.component(lesson.ending);
+        } 
+        else if(component == 'postit') {
+            result = BX.component(lesson.postit);
+            result[0].innerHTML = unit.text.replaceAll('\n', '<br>');
+        }
+        else if(component == 'image') {
+            const img = BX.component(lesson.imageBox);
+            img.children()[0].style.width = unit.width.includes('%') ? unit.width : `${unit.width}px`;
+            img.children()[0].src = unit.src;
+            result = img;
+        }
+        else if(component == 'hidebox') {
+            const hideEl = BX.component(lesson.hideBox);
+            hideEl.children()[0].innerText = unit.text;
+            if(unit.id) {
+                hideEl.children()[0].id = unit.id;
+            }
+            result = hideEl;
+        }
+        else if(component == 'quiz') {
+            result = BX.component(lesson.quiz);
+            
+            let num = 1;
+            const showQuiz = function() {
+                const quizData = unit.quiz[num-1];
+                const inputBox = result.find('input')[0];
+                inputBox.value = '';
+                inputBox.style.color = 'black';
+                result.find('.quizbutton')[0].name = quizData.id;
+                result.find('.quizPopup')[0].id = quizData.id;
+                result.find('.quizQuestion').prev()[0].innerText = `${num} / ${unit.quiz.length}`;
+                result.find('.quizQuestion')[0].innerHTML = quizData.question.replaceAll('\n', '<br>');
+                if(quizData.type == 'multiple') { //객관식인 경우
+                    $(inputBox).hide();
+                    result.find('.quizExamples').show();
+                    const sheet = result.find('.quizExamples')[0];
+                    $(sheet).empty();
+                    for(let i in quizData.example) {
+                        const no = i * 1 + 1;
+                        const exLine = BX.component(lesson.quizExample).appendTo(sheet);
+                        exLine.children()[0].innerText = `(${no})`;
+                        exLine.children()[1].innerHTML = `${quizData.example[i].replaceAll('\n', '<br>')}`;
+                    }
+                } 
+                else if(quizData.type == 'short') { //주관식인 경우
+                    $(inputBox).show();
+                    result.find('.quizExamples').hide();
+                }
+
+                $('.quizExample').removeClass('show');
+                const answer = quizData.answer;
+                
+                //퀴즈 팝업에서 제출버튼 클릭이벤트
+                result.find('.quizSubmitBtn')[0].onclick = e => {
+                    const submitted = quizData.type == 'multiple' ? 
+                    $('.quizExample.checked').index() + 1 : $(e.target).prev()[0].value;
+                    const quizPopup = result.find('.quizPopup')[0];
+                    const resultSheet = BX.component(lesson.quizResult).appendTo(quizPopup);
+                    // 정답체크
+                    if(answer == submitted) {
+                        resultSheet.color('blue');
+                        resultSheet.children()[0].innerText = '정답';
+                    }
+                    else {
+                        resultSheet.color('red');
+                        resultSheet.children()[0].innerText = '오답';
+                        //정답 표시하기
+                        if(quizData.type == 'multiple') {
+                            $(`.quizExample:nth-child(${answer * 1})`).addClass('show');
+                        }
+                        else if(quizData.type == 'short') {
+                            inputBox.value = answer;
+                            inputBox.style.color = 'blue';
+                        }
+                    }
+
+                    //퀴즈 풀이 학습기록
+                    
+                    setTimeout(() => { //정답,오답 알림 제거 후 다음 문제 생성
+                        resultSheet.remove();
+                        if(num >= unit.quiz.length) {
+                            toastr.success('마지막 문항입니다.');
+                            num = 1;
+                            return;
+                        }
+                        num++;
+                        showQuiz();
+                    }, 2000);
+                }
+            }
+            result.find('.quizbutton')[0].onclick = e => {
+                showQuiz();
+                $(`#${e.target.name}`).addClass('on');
+            }
+        }
+
+        return result;
+    }
+    /**
+     * 교재 내에서 practice direction의 에디터 열기 버튼을 클릭한 경우
+     * @param {*} targetApp 
+     */
+    function openPractice(targetApp, title, bgCode) {
         const editor =  $('.ace_editor')[0].aceEditor;
-        if(targetApp) {
-            $('.emulator').show(); 
+        $('.emulator').show(); 
+
+        if(targetApp != 'free') {
             const app = BX.components[targetApp];
             const code = app.appCode;
             editSection.find('.appTitle')[0].innerText = app.appTitle;
-            app.practice().appendTo($('.appWindow')[0]);
-            editor.session.setMode("ace/mode/javascript");
+            $('.appWindow').empty();
+            app.practice().appendTo($('.appWindow')[0]); 
             editor.setValue(code, 1);
             editor.focus();
+            
+            // editorUpdate();
+            // eval(app.bgCode);
             runApp();
+        } else {
+            editSection.find('.appTitle')[0].innerText = title;
+            editor.setValue(bgCode, 1);
+            editor.focus();
         }
-        // editor.getSession().on('change', editorUpdate);
-        $(editor).on('focus', e => {
-            clickedRunBtn = false;
-        });
-    }, 500);
-
-    /**
-     * 
-     * @param {*} targetApp 
-     */
-    function openPractice(targetApp) {
-        const editor =  $('.ace_editor')[0].aceEditor;
-        
-        $('.emulator').show(); 
-        const app = BX.components[targetApp];
-        const code = app.appCode;
-        editSection.find('.appTitle')[0].innerText = app.appTitle;
-        app.practice().appendTo($('.appWindow')[0]);
-        
-        editor.setValue(code, 1);
-        editor.focus();
-        // editorUpdate();
-        runApp();
-        // eval(app.bgCode); //???
+         //배경코드 실행
         
         // editor.getSession().on('change', editorUpdate);
         $(editor).on('focus', e => {
@@ -171,26 +550,100 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         $('.nav-x').hide();
         $('.nav-y').hide();
     }
-    emulator.find('.appWindow')[0].addEventListener('mousemove', mousemove);
-    emulator.find('.appWindow')[0].addEventListener('mouseout', mouseout);
+
+    /**
+     * 에디터 리셋 버큰 클릭 이벤트
+     * @param {*} e 
+     */
+    function refreshApp(e) {
+        // 교재모드인 경우, 코드기록 삭제, 배경코드
+        const editor =  $('.ace_editor')[0].aceEditor;
+        const codeId = $('.appTitle')[0].id;
+        const pageId = $('.appTitle')[0].getAttribute('data-pid');
+
+        if(codeId) {
+            const deletedTarget = record[bookId][pageId].code[codeId];
+            if(deletedTarget) {
+                delete record[bookId][pageId].code[codeId];
+                let saveData = {};
+                saveData[course] = record;
+                
+                //merge의 경우, 없는(삭제) 데이터는 그대로 남으므로, update 아닌 write로 저장
+                userWriteDocument(`users/${mid}`, saveData, (result) => {
+                    toastr.success('코드 기록이 삭제되었습니다.');
+                });
+            }
+
+            const data = pageData.filter(o => Object.keys(o)[0] == pageId)[0];
+            const content = data[pageId].content;
+            const compData = content.filter( o => o.codeId && o.codeId == codeId)[0];
+    
+            let bgCode;
+            //practice direction의 경우, bgCode가 없으므로. 앱 컴포넌트 데이터에서 appCode 가져오기
+            if(compData.comp == 'practiceDirection') {
+                bgCode = BX.components[compData.targetApp].appCode;
+            } 
+            else { // 일반 direction인 경우
+                bgCode = compData.bgCode;
+            }
+            editor.setValue(bgCode);
+            editor.navigateFileEnd(); 
+            
+        }
+        else {
+            editor.setValue('');
+        }
+    }
 
     /**
      * 코드 실행 버튼 클릭 이벤트
      */
-    function runApp() {
+    function runApp(e) {
         $('.appWindow').empty();
-        const targetApp = location.hash.slice(1);
-        if(targetApp)
-        BX.components[targetApp].practice().appendTo($('.appWindow')[0]);
         const editor =  $('.ace_editor')[0].aceEditor;
-        const code = editor.getValue();
+        const targetApp = location.hash.slice(1);
+        let code = editor.getValue();
+        if(targetApp && targetApp != 'free') {
+            BX.components[targetApp].practice().appendTo($('.appWindow')[0]);
+        } 
+             
         playSound('effectsound1');
         consoleDiv.empty();
 
         try {
             eval(code);
-        } catch(error) {
+        } 
+        catch(error) {
             print(`<font color=red>[ERROR] ${error.message}</font>`);
+        }
+
+
+        const codeId = $('.appTitle')[0].id; //record
+        if(e && codeId) { // 교재학습인 경우 코드기록
+            const title = $('.appTitle')[0].innerText;
+            const pageId = $('.appTitle')[0].getAttribute('data-pid');
+            let codeData = {
+                id : codeId,
+                code : code,
+                time: Date.now(),
+                title : title
+            };
+
+            if(!record[bookId]) {
+                record[bookId] = {};
+            }
+
+            if(!record[bookId][pageId]) { // 페이지 데이터가 없으면
+                record[bookId][pageId] = {code : {}};
+            }
+
+            const inputCode = {};
+            inputCode[codeId] = codeData; 
+
+            record[bookId][pageId].code = inputCode;
+            
+            // 데이터 업데이트 저장.
+            updateUserData(record);
         }
 
         editor.blur();
@@ -211,7 +664,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             const navBg = $('.bookNav'); 
             for(let pages of book) {
                 const pageId = Object.keys(pages)[0];
-                const btn = box().appendTo(navBg[0]).html('<span class="material-symbols-outlined">lock</span>');
+                const btn = box().appendTo(navBg[0]).html(navBg.children().length)//.html('<span class="material-symbols-outlined">lock</span>');
                 btn.attr('name', pageId);
                 // btn[0].onclick = e => {
                 //     if (e.target !== e.currentTarget) { //자식요소 클릭시
@@ -285,7 +738,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             
             const wrap = box().appendTo(b);
             for(let [idx, unit] of contents.entries()) {
-                
                 const created = createComponent(unit).appendTo(wrap);
                 
                 if(unit.comp == 'title') { //페이지 아이디 붙이기 
@@ -343,32 +795,54 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         return b;
     } 
 
-    function getUserData() {
-        const result = JSON.parse(localStorage.getItem(mid));
-        return result || {};
-    }
+    // function getUserData() {
+    //     const result = JSON.parse(localStorage.getItem(mid));
+    //     return result || {};
+    // }
+
     /**
      * 학습자 진도기록용 클릭이벤트 : 체크, 스크래치 박스 등 id를 가진 컨텐츠
      * @param {*} target 
      */
     function saveUserData(target) {
         const pageid = $($(target).parents()[1]).find('.pageidtag')[0].innerText;
-        const clickid = target.id
+        const clickid = target.id;
         if(!clickid) return;
+
+        if(!record[bookId]) {
+            record[bookId] = {};
+        }
 
         if(!record[bookId][pageid]) {
             record[bookId][pageid] = {
                 clicked : []
             };
         }
+        // if(!record[bookId][pageid].clicked) {
+        //     record[bookId][pageid].clicked = [];
+        // }
         if(!record[bookId][pageid].clicked.includes(clickid)) {
             record[bookId][pageid].clicked.push(clickid);
             record[bookId][pageid].time = Date.now();
         }
         // 기록
         localStorage.setItem(mid, JSON.stringify(record));
+        updateUserData(record);
     }
 
+    /**
+     * 학습자 기록 업데이트
+     * @param {*} record 
+     */
+    function updateUserData(record) {
+        // 교재 편집모드 에서는 update 제외
+        if(new URLSearchParams(location.search).get('edit') == 'on') {
+            return;
+        } 
+        let saveData = {};
+        saveData[course] = record;
+        userUpdateDocument(`users/${mid}`, saveData);
+    }
     /**
      * 학습자 진도기록에서 체크된 항목 표시해주기
      */
@@ -387,19 +861,22 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             });
         }
         
-        const checks = $('input.read_check');
-        checks.each(function(i, b) {
-            if(b.type == 'checkbox' && studied.includes(b.id)){
-                b.click();
-            }   
-        });
-        const hidebox = $('.hideb');
-        hidebox.each(function(i, b) {
-            const hideTarget = $(b).children()[0];
-            if(studied.includes(hideTarget.id)) {
-                hideTarget.click();
-            }
-        });
+        if(studied) {
+            const checks = $('input.read_check');
+            checks.each(function(i, b) {
+                if(b.type == 'checkbox' && studied.includes(b.id)){
+                    b.click();
+                }   
+            });
+            const hidebox = $('.hideb');
+            hidebox.each(function(i, b) {
+                const hideTarget = $(b).children()[0];
+                if(studied.includes(hideTarget.id)) {
+                    hideTarget.click();
+                }
+            });
+        }
+        
         bookReady = true;
     }
 
@@ -469,7 +946,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         if(e.key == 'Control') isCtrl = true; 
         if(e.key == 's') isSkey = true; //83
         if(isSkey && isCtrl) {
-            runApp();
+            $('.editSection .fn-btn :nth-child(3)')[0].click();
             return false;
         }
     }

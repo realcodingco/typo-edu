@@ -21,6 +21,7 @@
     width: 100%;
     height: 50px;
     margin-top: 300px;
+    border-top: 2px solid #0076BA;
 }
 .emulator {
     width: auto;
@@ -123,7 +124,16 @@ pattern {
     /* top: 0px;
     left: 0px; */
     z-index: 10;
-    transition: 0.5s
+    transition: 0.5s;
+}
+.lessonWindow .ace_error {
+    background-image: none !important; 
+}
+.lessonWindow .ace_warning {
+    background-image: none !important; 
+}
+.lessonWindow .ace_tooltip {
+    display: none !important;
 }
 .editSection .aceEditor {
     width: 100%;
@@ -132,6 +142,7 @@ pattern {
     line-height: 25px;
     font-family: IBM Plex Mono;
 }
+
 .emulator.play {
     display: block;
 }
@@ -178,16 +189,25 @@ pattern {
     font-size: 24px;
 } */
 .consolewindow {
-    bottom : 0;
+    position: absolute;
+    z-index: 10;
+    bottom : -35px;
+    left: 0px;
     width: 100%;
     height: 35px;
-    background: #444;
-    font-size: 12px;
+    background: black;
+    font-size: 14px;
     color: white;
     padding: 3px 10px;
     overflow: auto;
     font-family: san-serif;
+    transition: 0.8s;
+    opacity: 0.9;
+    border-top: 0.5px solid gray;
     /* transform : 'translateY(-100%)' */
+}
+.consolewindow.open{
+    height: 350px;
 }
 .consolewindow::-webkit-scrollbar {
     width: 5px;  /* 스크롤바의 너비 */
@@ -250,17 +270,18 @@ pattern {
     justify-content: space-around;
 }
 .bookNav div {
-    width: 30px;
-    height: 30px;
-    color: #e8af06;
+    width: 24px;
+    height: 24px;
+    color: gray;
+    /* #e8af06; */
     background: lightgray;
     font-size :14px;
     text-align:center;
     opacity: 0.6;
     border-radius: 40px;
-    border: 2px solid gray;
+    border: 1px solid gray;
     margin: 8px;
-    padding-top: 2px;
+    /* padding-top: 2px; */
     cursor: pointer;
 }
 .bookNav > div:hover {
@@ -271,8 +292,8 @@ pattern {
     width: max-content;
     font-size: 12px;
     position: absolute;
-    top: 0px;
-    left : 25px;
+    top: 25px;
+    left : -50%; /*25px;*/
     margin-left: 10px;
     color: #444;
     display: none;
@@ -283,6 +304,7 @@ pattern {
 .bookNav div.on{
     outline: 2px dashed #e87b06;
     background: #e8af06;
+    color: white;
 }
 .bookNav div.open {
     background: #e8af06;
@@ -354,11 +376,11 @@ pattern {
     margin: 20px auto;
     border-radius: 8px;
     font-family:sans-serif;
-    font-size: 14px;
+    font-size: 17px;
     color: white;
     background: dimgray;
     border : 0px;
-    padding: 5px 10px;
+    padding: 10px 22px;
 }
 @keyframes anim { 
     0% { 
@@ -590,9 +612,11 @@ span.listbtn {
     max-width: 200px;
     padding: 5px;
     font-size: 10px;
-    color: gray;
+    color: white;
     font-family: ChosunSg;
-    /* background: deeppink; */
+    background: deeppink;
+    border-radius: 5px;
+    opacity: 0.9;
 }
 .listbtn:hover .tooltipText {
     display: block;
@@ -629,7 +653,8 @@ span.listbtn {
     border-radius: 50px;
     background: #71D841;
     color : white;
-    padding: 10px 30px;
+    font-size: 28px;
+    padding: 8px 50px;
     box-shadow: 0 5px 1px #098C00;
 }
 .quizbutton:hover {
@@ -670,6 +695,10 @@ span.listbtn {
 .quizExample{
     margin-bottom: 20px;
     border-radius: 10px;
+    cursor: pointer;
+}
+.quizExample:hover {
+    background: #0E2A35;
 }
 .quizExample :nth-child(2)::after {
     content: '';

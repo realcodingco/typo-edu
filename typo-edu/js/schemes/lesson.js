@@ -61,6 +61,7 @@ const lesson = {
                 return;
             }
             $(e.target).find('input')[0].click();
+            if(location.pathname.includes('makeBook')) return;
             if($(e.target).find('input').prop('checked') && bookReady){ 
                 playSound('choice');
             }
@@ -74,6 +75,7 @@ const lesson = {
                 className: 'read_check',
                 type : 'checkbox',
                 onClick: (e) => {
+                    if(location.pathname.includes('makeBook')) return;
                     if ( bookReady && $(e.target).prop('checked') ) {
                         saveUserData(e.target);
                         playSound('choice');
@@ -244,6 +246,9 @@ const lesson = {
     sub : {
         kind: 'sub'
     },
+    sup : {
+        kind: 'sup'
+    },
     ending : {
         kind: 'box',
         style: {
@@ -262,7 +267,7 @@ const lesson = {
         kind: 'box',
         style: {
             width: '100%',
-            padding: '0px 80px'
+            padding: '0px 45px'
         },
         children: [
             {
@@ -407,7 +412,10 @@ const lesson = {
     },
     quiz : {
         kind: 'box',
-        style: {height: 100},
+        style: {
+            height: 100,
+            textAlign: 'center'
+        },
         children: [
             {
                 kind: 'button',

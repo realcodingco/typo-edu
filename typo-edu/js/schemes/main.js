@@ -60,7 +60,10 @@ const main = {
                 kind: 'box',
                 style: {
                     width: 150,
-                    textAlign: 'center'
+                    textAlign: 'center',
+                    fontSize:14,
+                    lineHeight: '100%',
+                    marginTop: 5
                 }
             }
         ]
@@ -79,7 +82,7 @@ const main = {
         style: {
             width: '100%',
             padding: 20,
-            fontSize: 30,
+            fontSize: 20,
             background: 'lightgray'
         }
     },
@@ -87,7 +90,7 @@ const main = {
         kind: 'box',
         style: {
             width: '100%',
-            height: 'calc(100% - 85px)',
+            height: 'calc(100% - 70px)',
             overflow: 'auto',
             textAlign: 'center',
             padding: '30px 0px'
@@ -108,22 +111,73 @@ const myPage = {
         kind : 'box',
         children: [
             {
-                kind: 'h2', //타이틀
-                text : '내 수강 목록',
+                kind: 'box',
                 style: {
-                    padding: 20
-                }
+                    background: '#FFF18E'
+                },
+                children: [
+                    {
+                        kind: 'h2', //타이틀
+                        text : '학습 현황',
+                        style: {
+                            padding: '20px 0px 0px 20px',
+                            width: 'auto',
+                            display: 'inline-block'
+                        }
+                    },
+                    {
+                        kind: 'box',
+                        style: {
+                            width: 50,
+                            height: 50,
+                            background:'white',
+                            // border: '1px solid lightgray',
+                            borderRadius: 100,
+                            float: 'right',
+                            margin: 10,
+                            overflow: 'hidden'
+                        },
+                        children: [
+                            {
+                                kind: 'img',
+                                src: './lecture/2.svg',
+                                style: {
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }
+                            }
+                        ]
+                    }
+                ]
             }
         ]
     },
+    courseListBox: {
+        kind: 'box',
+        className: 'myCourseListBox'
+    },
     courseBox: {
         kind: 'box',
+        className: 'myCourseBox',
         children: [
             {
                 kind: 'box',
+                onClick: e => {
+                    if(e.target != e.currentTarget) {
+                        e.currentTarget.click();
+                        return;
+                    }
+                     
+                    $(e.target).next().slideToggle(500, () => {
+                        const target = $(e.target).children()[0];
+                        target.innerText = target.innerText == 'arrow_right' ? 'arrow_drop_down' : 'arrow_right';
+                    });
+                },
                 style: {
-                    padding: '0px 10px',
-                    borderBottom: '1px solid lightgray'
+                    padding: '6px 10px 0px 10px',
+                    // borderBottom: '1px solid white',
+                    background: 'lightgray'
                 },
                 children: [
                     {
@@ -133,10 +187,11 @@ const myPage = {
                     },
                     {
                         kind: 'box',
-                        text: '그래머과정',
+                        className: 'courseTitleText',
+                        text: '그래머과정', //
                         style: {
                             width: 'auto',
-                            fontSize: 20,
+                            fontSize: 16,
                             marginRight:20
                         }
                     },
@@ -147,20 +202,21 @@ const myPage = {
                             width: 'auto',
                             fontSize: 12,
                             background: '#B7C9D5',
-                            borderRadius: 10,
+                            borderRadius: 6,
                             padding: '0px 12px',
                             margin: '5px 5px 0px 5px'
                         }
                     },
                     {
                         kind: 'box', // 학습진행율
+                        className: 'totalProgress',
                         text: '진행율 30%',
                         style: {
                             width: 'auto',
                             fontSize: 12,
                             color: 'white',
-                            background : '#004D80',
-                            borderRadius: 10,
+                            background : '#7192AC',
+                            borderRadius: 6,
                             padding: '0px 12px',
                             margin: '5px 5px 0px 5px'
                         }
@@ -175,36 +231,56 @@ const myPage = {
     },
     stepBox : {
         kind: 'box',
-        style: {
-            padding: 15,
-            borderBottom: '1px dotted lightgray'
-        },
+        className: 'stepBox',
         children: [
             {
-                kind:'p',
-                text: 'title'
+                kind: 'box',
+                children: [
+                    {
+                        kind:'p',
+                        text: 'title',
+                    },
+                    {
+                        kind: 'a',
+                        text : '학습하기',
+                        className: 'studyBtn',
+                    }
+                ]
             },
             {
                 kind:'box',
                 style: {
                     display:'flex',
                     width: '90%',
-                    margin: '0px auto'
+                    margin: '0px auto',
+                    gap: '5px'
                 },
                 children: [
                     {
                         kind: 'span',
+                        className: 'progressNumber',
                         text:'0%',
-                        width: 40
+                        style: {
+                            width: 40,
+                            color: 'gray'
+                        }
                     },
                     {
                         kind:'box',
                         style: {
                             background: '#f7f7f7',
-                            height: 22,
-                            borderLeft: 'calc(100% - 80%) solid red'
+                            height: 18,
+                            marginTop: 2,
+                            borderRadius: 8,
+                            overflow: 'hidden',
+                            width: 'calc(100% - 50px)'
                         },
-                        
+                        children: [
+                            {
+                                kind: 'box',
+                                className: 'progress',
+                            }
+                        ]
                     }
                 ]
             }

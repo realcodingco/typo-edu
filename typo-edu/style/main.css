@@ -19,11 +19,43 @@
 }
 .padBg {
     height: calc(100% - 50px);
-    background: white;
-    overflow: auto;
+    background-color: white;
+    background-image: url('../lecture/ci.png');
+    background-size: 180px 180px;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* overflow: auto; */
     /* display: grid;
     justify-content: space-around; */
 }
+.myCourseListBox{
+    height: calc(100% - 70px);
+    overflow: auto;
+}
+.myCourseBox span.material-symbols-outlined{
+    margin-top: 2px;
+    font-size: 25px;
+}
+.myCourseListBox::-webkit-scrollbar {
+    width: 10px;  /* 스크롤바의 너비 */
+    padding: 2px;
+    display: none;
+}
+
+.myCourseListBox::-webkit-scrollbar-thumb {
+    background: #d7dcfa; /* 스크롤바의 색상 */
+    border: 1px solid #584A52;
+    border-radius: 125px;
+}
+
+.myCourseListBox::-webkit-scrollbar-track {
+    background: rgba(45, 45, 245, 0.2);  /*스크롤바 뒷 배경 색상*/
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    background-clip: content-box; 
+}
+
+
 .padBtn {
     text-align: center;
 }
@@ -86,4 +118,39 @@
     padding-top: 20px;
     line-height: 14px;
 }
-
+.stepList{
+    transition: 0.8s;
+}
+.stepBox{
+    padding: 15px;
+    border-bottom: 1px dotted lightgray;
+    background: white;
+}
+.stepBox:hover{
+    background: #B7C9D5;
+}
+.studyBtn{
+    position: absolute;
+    top:-5px;
+    right : 0px;
+    background: #D9EEFC;
+    font-size : 14px;
+    padding: 3px 10px;
+    border-radius: 10px;
+    color: white;
+    text-decoration: none;
+    box-shadow: 0 3px 1px #c2daea;
+}
+.studyBtn:hover{
+    background: #349bdf;
+    box-shadow: none;
+    margin-top: 5px;
+    color: white;
+}
+.progress{
+    background: #FFDB66 !important;
+    width: 0px;
+    height: 100% !important;
+    border-radius: 0px;
+    transition: 0.7s;
+}

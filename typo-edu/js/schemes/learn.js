@@ -6,6 +6,9 @@ const learn = {
         kind: 'box',
         id: 'console',
         className: 'consolewindow',
+        onClick: e => {
+            $(e.currentTarget).toggleClass('open');
+        },
         text: '>>'
     },
     emulator : {
@@ -30,7 +33,11 @@ const learn = {
                             height: 563-11,//502,
                             background: 'white',
                             border: 0,
-                            overflow: 'auto'
+                            overflow: 'auto',
+                            textAlign:'center',
+                            backgroundImage: "url('./lecture/ci.png')",
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'center'
                         },
                     },
                     {
@@ -109,7 +116,8 @@ const learn = {
                         kind: 'box',
                         className: 'appTitle',
                         contenteditable : 'true',
-                        text: '변수',
+                        spellCheck: 'false',
+                        text: 'no title',
                         style: {
                             width: 'auto',
                             height: 'auto',
@@ -143,6 +151,7 @@ const learn = {
                             },
                             {
                                 kind: 'box',
+                                style: {display: 'none'},
                                 children: [
                                     {
                                         kind: 'span',
@@ -224,6 +233,7 @@ const learn = {
     lessonWindow: {
         kine: 'box',
         className: 'lessonWindow', 
+        oncopy: 'return false', // 교재내용 복사 금지
         children: [
             {
                 kind: 'span',
@@ -289,13 +299,12 @@ const learn = {
                                 onClick: e => {
                                     const course = new URLSearchParams(location.search).get("course");
                                     location.href = `index.html?mid=${mid}#${course}`;
-
                                 },
                                 children: [
                                     {
                                         kind: 'span',
                                         className: 'tooltipText',
-                                        text: '교재 리스트'
+                                        text: '교재 리스트로 돌아가기'
                                     }
                                 ]
                             }

@@ -466,6 +466,98 @@ const edit = {
                         }
                     }
                 ]
+            },
+            {
+                kind: 'span', // 스타일 즐겨찾기 아이콘
+                className: 'material-symbols-outlined',
+                text: 'star',
+                onClick: e => $('.styleFavorite').toggle(),
+                style: {
+                    color : '#00BA98',
+                    width: 'auto',
+                    margin: 3,
+                    float: 'right'
+                }
+            },
+        ]
+    },
+    styleUnit: {
+        kind:'box',
+        style: {
+            padding: 5
+        }
+    },
+    styleFavorite : {
+        kind: 'box',
+        className : 'styleFavorite',
+        style: {
+            position: 'absolute',
+            width: 300,
+            height: 350,
+            top: 40,
+            right: 0,
+            border: '1px solid',
+            borderRadius: 8,
+            background : '#00BA98',
+            margin: 3,
+            float: 'right',
+            zIndex: 10,
+            display: 'none'
+        },
+        children: [
+            {
+                kind: 'box',
+                text : '스타일 즐겨찾기',
+                style : {
+                    height: '90%',
+                    color:'white'
+                },
+                children: [
+                    {
+                        kind:'box',
+                        class: 'favoriteList',
+                        style: {
+                            padding: 5,
+                            background: 'white',
+                            color: 'black',
+                            height: '90%'
+                        }
+                    }
+                ]
+
+            },
+            {
+                kind: 'box',
+                style : {
+                    height: '10%'
+                },
+                children: [
+                    {
+                        kind: 'input',
+                        class : 'styleText',
+                        width: '80%'
+                    },
+                    {
+                        kind: 'button',
+                        text: '등록',
+                        onClick: e => {
+                            let style = document.querySelector('.styleText').value;
+                            
+                            if(style) {
+                                favoriteStyle.push(style);
+                                localStorage.setItem('style', JSON.stringify(favoriteStyle));
+                                // 리스트에 추가
+                                appendStyleUnit(style);
+                                document.querySelector('.styleText').value = '';
+                            }
+                        },
+                        style:{
+                            marginLeft: 5,
+                            borderRadius:5,
+                            border: 0
+                        }
+                    }
+                ]
             }
         ]
     },
@@ -523,6 +615,11 @@ const edit = {
                         kind: 'option',
                         html: '글상자',
                         value : 'text'
+                    },
+                    {
+                        kind: 'option',
+                        html: '위첨자',
+                        value : 'sup'
                     },
                     {
                         kind: 'option',
@@ -664,6 +761,18 @@ const edit = {
         readonly: 'true',
         className: 'progressIdbox',
         placeholder: '진도기록을 위한 id',
+        style: {
+            width: '90%',
+            margin: 5,
+            outline: 'none'
+        }
+    },
+    codeId : { // 학습자 입력 코드 기록을 위한 id 상자
+        kind : 'input',
+        name : 'codeId',
+        readonly: 'true',
+        className: 'codeIdbox',
+        placeholder: '코드기록을 위한 id',
         style: {
             width: '90%',
             margin: 5,
@@ -1035,6 +1144,12 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
             edit.edit, edit.styleBtn,
         ]
     },
+    sup : {  //위 첨자 컴포넌트 데이터 입력 폼
+        kind: 'box',
+        children: [
+            edit.edit, edit.styleBtn,
+        ]
+    },
     sub: {  //아래첨자 컴포넌트 데이터 입력 폼
         kind: 'box',
         children: [
@@ -1105,6 +1220,7 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
     practiceDirection: { //실습지시문(에디터 열기 버튼포함) 컴포넌트 데이터 입력 폼
         kind: 'box',
         children: [
+            edit.codeId,
             {
                 kind: 'input',
                 name: 'targetApp',
@@ -1112,6 +1228,28 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
                 style: {
                     width: '90%',
                     margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'title',
+                placeholder: '앱 제목',
+                style: {
+                    width: '90%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'textarea',
+                name :'bgCode',
+                placeholder: '배경코드 입력',
+                style: {
+                    width: '95%',
+                    height: 70,
+                    margin: '5px auto',
+                    padding: 5,
                     outline: 'none'
                 }
             },
@@ -1177,6 +1315,7 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
     direction : { //일반지시문(에디터 열기 버튼포함) 컴포넌트 데이터 입력 폼
         kind: 'box',
         children: [
+            edit.codeId,
             edit.edit,
             {
                 kind: 'textarea',
@@ -1194,6 +1333,16 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
                 kind: 'input',
                 name: 'targetLine',
                 placeholder: '포커스 라인(숫자)',
+                style: {
+                    width: '90%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'title',
+                placeholder: '에디터 제목',
                 style: {
                     width: '90%',
                     margin: 5,
@@ -1314,6 +1463,7 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
             {
                 kind: 'input',
                 name : 'src',
+                spellcheck: 'false',
                 placeholder: '이미지 경로',
                 style: {
                     width: '60%',

@@ -1,5 +1,6 @@
 //교재 만들기 편집 도구
 let bookData = getBookData();
+let favoriteStyle = JSON.parse(localStorage.getItem("style")) || [];
 let totalCourse = getTotalCourseData();
 let previewBox, contentList, editBox;
 document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
@@ -11,6 +12,11 @@ appendMakeBook();
 function appendMakeBook(){
     const bg = box().appendTo(topBox).size('100%', '100vh').align('center');
     BX.component(edit.header).appendTo(bg);
+    BX.component(edit.styleFavorite).appendTo(bg);
+
+    for(let unit of favoriteStyle) {
+        appendStyleUnit(unit);
+    }
     
     if(bookData) { // bookData가 있으면 교재 선택상자 option 추가
         Object.keys(bookData).forEach(id => {
@@ -26,9 +32,26 @@ function appendMakeBook(){
 }
 
 /**
+ * 자주 사용하는 스타일 즐겨찾기 목록 생성용
+ * @param {string} style 
+ */
+function appendStyleUnit(style){
+    let line = BX.component(edit.styleUnit).appendTo($('.favoriteList')[0]);
+    line.html(`<font style="${style}">즐겨찾기</font>`);
+    line[0].onclick = e => {
+        let idx = e.target.tagName == 'DIV' ? $(e.target).index() : $(e.target).parent().index();
+        let copied = favoriteStyle[idx];
+        setTimeout(async() => {
+            await window.navigator.clipboard.writeText(copied).then(() => {
+                // alert("클립보드로 복사되었습니다.");
+            });
+        }, 300);
+    }
+}
+/**
  * 교재 제작도구 초기화
  */
-function initMaker() {
+function initMaker(){
     previewBox.empty();
     editBox.empty();
     appendEditTool().appendTo(editBox);
@@ -36,13 +59,12 @@ function initMaker() {
 }
 
 /**
- * 컴포넌트 생성을 위한 데이터 입력 폼 생성
+ * 컴포넌트 생성을 위한 데이터 입력 폼 contentList에 붙여줍니다.
  * @param {*} data optional
  * @param {*} order optional
  * @returns 
  */
 function appendEditTool(data, order) {
-    
     const b = BX.component(editInput.makerTool);
     $(b).find('.plusCompBtn')[0].onclick = addCompToPreview;
     $(b).on('change', '#typeSelect', loadEditTool);
@@ -59,10 +81,15 @@ function appendEditTool(data, order) {
 
         $(b).find('input').each((i, el) => {
             if(el.name == 'enter' || el.name == 'order') return;
-            if(data[el.name])
+            if(data[el.name]) {
                 el.value = data[el.name];
+            }
 
             if(el.name == 'id' && !el.value) {
+                el.value = randomId();
+            }
+
+            if(el.name == 'codeId' && !el.value) {
                 el.value = randomId();
             }
         });
@@ -249,7 +276,7 @@ function manageBook(e) {
     $(pageList).sortable();
     const inputEl = $(form).find('input')[0];
     if(bookData[bookId].icon) {
-        $('.setIcon').find('img')[0].src = `./image/${bookData[bookId].icon}`;
+        $('.setIcon').find('img')[0].src = `./lecture/icons/${bookData[bookId].icon}`;
         $('.setIcon').find('input')[0].value = bookData[bookId].icon;    
     }   
     
@@ -343,7 +370,7 @@ function addCompToPreview(e) {
         sortedOrder();
     }
     else {
-        if(data.order != '') {
+        if(data.order != '') {  //특정 위치로 끼워넣은 경우
             const order = $(parent[2]).find('input[name=order]')[0].value * 1;
             $(contentList.children()[order-1]).before(appendEditTool(data, order));
             $(previewBox.children()[order-1]).before(createContent(data));
@@ -354,10 +381,19 @@ function addCompToPreview(e) {
         }
         sortedOrder();
     
-        //편집도구 초기화
+        //편집도구 초기화 
         $(editBox).empty();
         appendEditTool().appendTo(editBox);
     }
+    // 추가된 위치로 스크롤 이동 ... 중간에 추가된 경우는??
+    if(data.order) {
+        const target = $(previewBox.children()[data.order-1])[0];
+        target.scrollIntoView({block:'start'});
+        setTimeout(() => {$(target).find('.previewhandle')[0].click();}, 500);
+    } 
+    else {
+        previewBox[0].scrollTo({top: previewBox[0].scrollHeight});
+    }   
 }
 
 /**
@@ -374,8 +410,19 @@ function loadEditTool(e) {
     let selected = combobox.options[combobox.selectedIndex].value;
     if(selected == 'ending' || selected == 'none') return;
 
+
     const component = BX.component(editInput[selected]).appendTo(target);
-    if($(component).find('.progressIdbox')[0]) $(component).find('.progressIdbox')[0].value = randomId();
+    if(selected == 'image') { //교재별 이미지 경로 문자열 자동완성 - 파일명만 입력하면 되도록
+        $(target).find('input[name=src]')[0].value = `./lecture/9627cb42/${location.hash.slice(1)}/`;
+    }
+
+    const idBox = $(component).find('.progressIdbox')[0]; // id가 필요한 컴포넌트의 경우, 랜덤 id 부여
+    if(idBox) idBox.value = randomId();
+    
+    const codeIdBox = $(component).find('.codeIdbox')[0]; // 코드 id 컴포넌트의 경우, 랜덤 id 부여
+    if(codeIdBox) {
+        codeIdBox.value = randomId(); 
+    }
 } 
 
 /**
@@ -488,6 +535,15 @@ function savePageData(e){
             saveBookData(modifiedData);
             toastr.success('저장되었습니다');
             bookData = modifiedData;
+            const copied = JSON.stringify(bookData[location.hash.slice(1)].pages);
+            // console.log(copied);
+
+            setTimeout(async() => {
+                await window.navigator.clipboard.writeText(copied).then(() => {
+                    // 복사가 완료되면 이 부분이 호출된다.
+                    // alert("클립보드로 복사되었습니다.\njson 데이터를 수정하세요.");
+                });
+            }, 1000);
         }  
     } 
 }
@@ -549,6 +605,7 @@ function loadContents(e) {
         } 
         sortedOrder();
     }  
+    previewBox[0].scrollTo({top: 0});
 }
 
 /**
@@ -645,5 +702,4 @@ function saveBookData(data) {
     if(data)
         localStorage.setItem("book", JSON.stringify(data));
 }
-
 

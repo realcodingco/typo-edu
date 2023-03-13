@@ -1,0 +1,153 @@
+{
+    "9627cb42": {
+        "title": "모던 자바스크립트 꿀잼 실습",
+        "books": [
+            {
+                "step": 1,
+                "id": "88a32a81",
+                "title": "변수",
+                "icon": "undraw_data_processing_yrrv.svg"
+            },
+            {
+                "step": 2,
+                "id": "a2906dc9",
+                "title": "데이터",
+                "icon": "undraw_data_re_80ws.svg"
+            },
+            {
+                "step": 3,
+                "id": "e65dc3a9",
+                "title": "타입변환/체크",
+                "icon": "undraw_completed_tasks_vs6q.svg"
+            },
+            {
+                "step": 4,
+                "id": "f9c6b318",
+                "title": "연산자",
+                "icon": "undraw_calculator_re_alsc.svg"
+            },
+            {
+                "step": 5,
+                "id": "8f0c2b45",
+                "title": "함수 1",
+                "icon": "undraw_functions_re_alho.svg"
+            },
+            {
+                "step": 6,
+                "id": "d467a1bb",
+                "title": "함수 2",
+                "icon": "undraw_working_remotely_re_6b3a.svg"
+            },
+            {
+                "step": 7,
+                "id": "176ed95e",
+                "title": "조건문",
+                "icon": "undraw_check_boxes_re_v40f.svg"
+            },
+            {
+                "step": 8,
+                "id": "2b7e5cbf",
+                "title": "반복문",
+                "icon": "undraw_accept_tasks_re_09mv.svg"
+            },
+            {
+                "step": 9,
+                "id": "af0ebe13",
+                "title": "배열",
+                "icon": "undraw_progress_indicator_re_4o4n.svg"
+            },
+            {
+                "step": 10,
+                "id": "d377828a",
+                "title": "배열함수",
+                "icon": "undraw_progress_overview_re_tvcl.svg"
+            },
+            {
+                "step": 11,
+                "id": "d0ac26ee",
+                "title": "프로미스",
+                "icon": "undraw_reminder_re_fe15.svg"
+            },
+            {
+                "step": 12,
+                "id": "e7fd484f",
+                "title": "이벤트 1",
+                "icon": "undraw_server_status_re_n8ln.svg"
+            },
+            {
+                "step": 13,
+                "id": "ce6b0702",
+                "title": "이벤트 2",
+                "icon": "undraw_typewriter_re_u9i2.svg"
+            },
+            {
+                "step": 14,
+                "id": "be27edac",
+                "title": "이벤트 3",
+                "icon": "undraw_documents_re_isxv.svg"
+            },
+            {
+                "step": 15,
+                "id": "65fba1c1",
+                "title": "이벤트 4",
+                "icon": "undraw_fill_form_re_cwyf.svg"
+            },
+            {
+                "step": 16,
+                "id": "2f3de8a9",
+                "title": "JSON",
+                "icon": "undraw_version_control_re_mg66.svg"
+            },
+            {
+                "step": 17,
+                "id": "379e9fca",
+                "title": "클래스",
+                "icon": "undraw_code_review_re_woeb.svg"
+            },
+            {
+                "step": 18,
+                "id": "ba092138",
+                "title": "제너레이터 함수",
+                "icon": "undraw_online_resume_re_ru7s.svg"
+            },
+            {
+                "step": 19,
+                "id": "c0f8f952",
+                "title": "MATH 함수",
+                "icon": "undraw_mathematics_-4-otb.svg"
+            },
+            {
+                "step": 20,
+                "id": "f0106a2b",
+                "title": "DATE 함수",
+                "icon": "undraw_calendar_re_ki49.svg"
+            },
+            {
+                "step": 21,
+                "id": "2eb7100f",
+                "title": "문서 객체 모델",
+                "icon": "undraw_elements_re_25t9.svg"
+            },
+            {
+                "step": 22,
+                "id": "1269e30e",
+                "title": "정규표현식",
+                "icon": "undraw_code_typing_re_p8b9.svg"
+            },
+            {
+                "step": 23,
+                "id": "e625cbd6",
+                "title": "상호작용과 모듈",
+                "icon": "undraw_usability_testing_re_uu1g.svg"
+            },
+            {
+                "step": 24,
+                "id": "a99e61d2",
+                "title": "Number, String 객체",
+                "icon": "undraw_font_re_efri.svg"
+            }
+        ],
+        "time": 1673272317509,
+        "id": "9627cb42"
+    }
+}
