@@ -445,7 +445,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
 
         if(targetApp != 'free') {
             const app = BX.components[targetApp];
-            const code = app.appCode;
+            const code = app.appCode || bgCode;
             editSection.find('.appTitle')[0].innerText = app.appTitle;
             $('.appWindow').empty();
             app.practice().appendTo($('.appWindow')[0]); 
