@@ -1,73 +1,73 @@
 //숫자 맞추기 게임 : 변수 step 실습앱
-const guessNumgerScheme = {
-    app : {
-        kind: 'box',
-        style : {
-            textAlign: 'center',
-            height: '100%',
-            fontSize: 40,
-            overflow: 'hidden'
-        },
-        children: [
-            {
-                kind: 'box',
-                text: 'Guess Number',
-                style: {
-                    width: '100%',
-                    height: 50,
-                    
-                }
-            },
-            {
-                kind: 'box',
-                style: {
-                    width: '100%',
-                    height: 'calc(70% - 50px)',
-                    background: 'gray',
-                    paddingTop: 10,
-                    lineHeight: 0,
-                    textAlign: 'left'
-                }
-            },
-            {
-                kind: 'box',
-                text : '크다',
-                className: 'bigger',
-                style: {
-                    width: '50%',
-                    height: '30%',                    
-                }
-            },
-            {
-                kind: 'box',
-                text: '작다',
-                className: 'smaller',
-                style: {
-                    width: '50%',
-                    height: '30%',                    
-                }
-            }
-        ]
-    },
-    correctbox: {
-        kind: 'box',
-        style: {
-            width: '80%', 
-            height: 'auto',
-            background: 'rgba(24,50,178,0.8)',
-            color :'white',
-            borderRadius: 10,
-            padding :5,
-            position : 'absolute',
-            zIndex :3,
-            left :'10%',
-            top:'35%',
-            lineHeight:'100%'
-        }
-    }
-};
 var appTitle, appendNumberButton, getResult, getRandomNumber;//실습에 사용할 함수들.
 (function(){
+    const guessNumgerScheme = {
+        app : {
+            kind: 'box',
+            style : {
+                textAlign: 'center',
+                height: '100%',
+                fontSize: 40,
+                overflow: 'hidden'
+            },
+            children: [
+                {
+                    kind: 'box',
+                    text: 'Guess Number',
+                    style: {
+                        width: '100%',
+                        height: 50,
+                        
+                    }
+                },
+                {
+                    kind: 'box',
+                    style: {
+                        width: '100%',
+                        height: 'calc(70% - 50px)',
+                        background: 'gray',
+                        paddingTop: 10,
+                        lineHeight: 0,
+                        textAlign: 'left'
+                    }
+                },
+                {
+                    kind: 'box',
+                    text : '크다',
+                    className: 'bigger',
+                    style: {
+                        width: '50%',
+                        height: '30%',                    
+                    }
+                },
+                {
+                    kind: 'box',
+                    text: '작다',
+                    className: 'smaller',
+                    style: {
+                        width: '50%',
+                        height: '30%',                    
+                    }
+                }
+            ]
+        },
+        correctbox: {
+            kind: 'box',
+            style: {
+                width: '80%', 
+                height: 'auto',
+                background: 'rgba(24,50,178,0.8)',
+                color :'white',
+                borderRadius: 10,
+                padding :5,
+                position : 'absolute',
+                zIndex :3,
+                left :'10%',
+                top:'35%',
+                lineHeight:'100%'
+            }
+        }
+    };
     function previewApp() {
         const randomNumber = Math.floor(Math.random() * 50) + 1;
         const b = box().size('100%');
