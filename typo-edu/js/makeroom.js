@@ -38,7 +38,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             emulator.find('.appWindow')[0].addEventListener('mousemove', mousemove);
             emulator.find('.appWindow')[0].addEventListener('mouseout', mouseout);
             const consoleDiv = $('.consolewindow');
-            $('.editSection .fn-btn :nth-child(3)')[0].onclick = runApp; //실행 버튼
+            $('.editSection .fn-btn > :contains("play_arrow")')[0].onclick = runApp; //실행 버튼
 
             window.consoleDiv = consoleDiv;
             window.saveUserData = saveUserData;
@@ -46,7 +46,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
 
             //교재 붙이기
             if(bookId) { // 교재학습모드
-                const resetButton = $('.editSection .fn-btn > div:nth-child(2)');
+                const resetButton = $('.editSection .fn-btn > div:contains("restart_alt")');
                 resetButton.show();
                 resetButton[0].onclick = refreshApp; //리셋 버튼
                 $.ajax({url: `./lecture/${course}/${bookId}/${bookId}.json`, dataType: "json"})
