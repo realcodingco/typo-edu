@@ -218,7 +218,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 else {
                     $('.lessonWindow').toggleClass('half');
                     setTimeout(() => {
-                        $('.lessonBook')[0].style.overflow = 'auto';
+                        $('.lessonBook')[0].style.overflowY = 'auto';
                         e.target.scrollIntoView({block:'start'});
                         e.target.value = '에디터 열기';
                         consoleDiv.empty();
@@ -318,16 +318,16 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         
                     $('.lessonWindow').toggleClass('half');
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start', inline:'end'});
-                        $('.lessonBook')[0].style.overflow = 'hidden';
+                        e.target.scrollIntoView({block:'start'});
+                        $('.lessonBook')[0].style.overflowY = 'hidden';
                         e.target.value = 'DONE';
                     }, 500);
                 }
                 else {
                     $('.lessonWindow').toggleClass('half');
-                    $('.lessonBook')[0].style.overflow = 'auto';
+                    $('.lessonBook')[0].style.overflowY = 'auto';
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start', inline:'end'});
+                        e.target.scrollIntoView({block:'start'});
                         e.target.value = '에디터 열기';
                         consoleDiv.empty();
                     }, 500);

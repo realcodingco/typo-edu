@@ -240,9 +240,9 @@ const learn = {
                 text: 'fullscreen_exit',
                 className: 'material-symbols-outlined',
                 onClick: e => {
+                    $('.lessonBook')[0].style.overflowY = 'auto';
                     if(e.target.innerText == 'fullscreen') {
-                        e.target.innerText = 'fullscreen_exit'
-                        
+                        e.target.innerText = 'fullscreen_exit';
                     } else  {
                         e.target.innerText = 'fullscreen';
                     }   
