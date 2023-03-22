@@ -58,13 +58,13 @@ toastr.options = {
                     $(e.target).parent().addClass('clicked');
                 }
             }
-            $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
-            // if(location.hash) {
-            //     openStepList(location.hash.slice(1));
-            // } 
-            // else {
-            //     openCourse();
-            // }
+            
+            if(location.hash) {
+                openStepList(location.hash.slice(1));
+            } 
+            else {
+                $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
+            }
         });
     }
 
