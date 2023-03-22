@@ -131,24 +131,24 @@ const learn = {
                         kind: 'box',
                         className: 'fn-btn',
                         children: [
-                            {
-                                kind: 'box',
-                                children: [
-                                    {
-                                        kind: 'span',
-                                        className: 'material-symbols-outlined',
-                                        text: 'share',
-                                        children: [
+                            // {
+                            //     kind: 'box',
+                            //     children: [
+                            //         {
+                            //             kind: 'span',
+                            //             className: 'material-symbols-outlined',
+                            //             text: 'share',
+                            //             children: [
                                             
-                                        ]
-                                    },
-                                    {
-                                        kind: 'p',
-                                        text: '공유'
-                                    }
-                                ]
+                            //             ]
+                            //         },
+                            //         {
+                            //             kind: 'p',
+                            //             text: '공유'
+                            //         }
+                            //     ]
                                 
-                            },
+                            // },
                             {
                                 kind: 'box',
                                 style: {display: 'none'},

@@ -48,23 +48,46 @@ const main = {
     courseIcon : {
         kind: 'box',
         style: {
-            width: 150,
-            margin: '20px 5px 20px 25px'
+            width: 300,
+            margin: '20px 40px',//'20px 5px 20px 25px'
+            textAlign: 'center',
         },
         children: [
             {
+                kind: 'box',
+                text: '반갑습니다. 000 학습자님.',
+                style: {
+                    marginBottom: 10
+                }
+            },
+            {
                 kind:'box',
-                className : 'courseIcon'
+                className : 'courseIcon',
             },
             {
                 kind: 'box',
                 style: {
-                    width: 150,
+                    width: 300,
                     textAlign: 'center',
-                    fontSize:14,
-                    lineHeight: '100%',
-                    marginTop: 5
+                    fontSize:16,
+                    color: '#0052A5',
+                    // lineHeight: '100%',
+                    marginTop: 15
                 }
+            },
+            {
+                kind: 'button',
+                html: 'Final Quiz<br><sub style="font-size:10px;color:gray;">학습진도율 80%이상시 응시가능</sub>',
+                style: {
+                    margin: '10px auto',
+                    border: 0,
+                    borderRadius: 10,
+                    padding: '20px 80px',
+                    fontSize: 22,
+                    marginTop: 15,
+                    lineHeight: '50%'
+                }
+
             }
         ]
         

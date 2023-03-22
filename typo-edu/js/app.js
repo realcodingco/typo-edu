@@ -14,7 +14,7 @@ toastr.options = {
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
         getUserData(function(data) {
             userData = data;
-            console.log(userData)
+            // console.log(userData)
             init();
         });
     }
@@ -40,7 +40,7 @@ toastr.options = {
                 },
                 { 
                     text : 'apps',
-                    fn : openAppStore
+                    fn : () => {openStepList('9627cb42');} //openAppStore
                 },
                 { 
                     text : 'school',
@@ -58,12 +58,13 @@ toastr.options = {
                     $(e.target).parent().addClass('clicked');
                 }
             }
-            if(location.hash) {
-                openStepList(location.hash.slice(1));
-            } 
-            else {
-                openCourse();
-            }
+            $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
+            // if(location.hash) {
+            //     openStepList(location.hash.slice(1));
+            // } 
+            // else {
+            //     openCourse();
+            // }
         });
     }
 
@@ -93,16 +94,16 @@ toastr.options = {
         Object.keys(courseData).forEach(function(cid){
             const course  = courseData[cid];
             const courseTitle = course.title; 
-            const iconbox = BX.component(main.courseIcon).appendTo(padBg[0]).click( e => {
-                openStepList(cid);
-            });
-            iconbox[0].lastChild.innerText = courseTitle;
+            const iconbox = BX.component(main.courseIcon).appendTo(padBg[0]);
+            // .click( e => {
+            //     openStepList(cid);
+            // });
+            iconbox.children()[2].innerText = '학습진도 80% 이상, 퀴즈 60점 이상 수료'//courseTitle;
 
-            for(var j=0; j<7; j++) { // 7개만 아이콘 생성
-                const icon = courseData[cid].books[j].icon;
-                BX.component(main.stepIcon).appendTo(iconbox[0].firstChild).border('1px solid gray').background(`url(./lecture/icons/${icon})`)
-                
-            }
+            // for(var j=0; j<7; j++) { // 7개만 아이콘 생성
+            //     const icon = courseData[cid].books[j].icon;
+            //     BX.component(main.stepIcon).appendTo(iconbox[0].firstChild).border('1px solid gray').background(`url(./lecture/icons/${icon})`)
+            // }
         });
     }
 
@@ -198,7 +199,7 @@ toastr.options = {
             
         }
         //mid별 수강 코스 가져오기 
-        toastr.success('mid별 수강목록 가져오기가 필요합니다.<br> 지금은 그래머과정을 공통으로 가져옵니다.')
+        // toastr.success('mid별 수강목록 가져오기가 필요합니다.<br> 지금은 그래머과정을 공통으로 가져옵니다.')
         appendCourseList('9627cb42');        
     }
 
