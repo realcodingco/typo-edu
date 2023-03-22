@@ -77,17 +77,8 @@ const main = {
             },
             {
                 kind: 'button',
-                html: 'Final Quiz<br><sub style="font-size:10px;color:gray;">학습진도율 80%이상시 응시가능</sub>',
-                style: {
-                    margin: '10px auto',
-                    border: 0,
-                    borderRadius: 10,
-                    padding: '20px 80px',
-                    fontSize: 22,
-                    marginTop: 15,
-                    lineHeight: '50%'
-                }
-
+                className: 'finalQuizBtn',
+                html: 'Final Quiz<br><sub style="font-size:10px;color:#FFD870;">학습진도율 80%이상시 응시가능</sub>',
             }
         ]
         

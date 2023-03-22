@@ -129,6 +129,24 @@
 .stepBox:hover{
     background: #B7C9D5;
 }
+.finalQuizBtn{
+    background: #FFEAC6;
+    color: #FF8E05;
+    margin: 10px;
+    border-radius: 10px;
+    padding: 20px 80px;
+    font-size: 20px;
+    margin-top: 15px;
+    line-height: 50%;
+    box-shadow: 0 3px 1px #D8C7A9;
+    border: 0px;
+}
+.finalQuizBtn:hover{
+    box-shadow: none;
+    margin-top: 20px;
+    background: #FF8E05;
+    color:white;
+}
 .studyBtn{
     position: absolute;
     top:-5px;
