@@ -183,6 +183,8 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                     if(bgCode || bgCode == 'clear') {
                         editor.setValue(bgCode);
                         if(targetLine) editor.gotoLine(targetLine);
+                    } else {
+                        editor.setValue('');
                     }
                     
                     if(title) { // 에디터 제목 삽입
@@ -819,9 +821,9 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 clicked : []
             };
         }
-        // if(!record[bookId][pageid].clicked) {
-        //     record[bookId][pageid].clicked = [];
-        // }
+        if(!record[bookId][pageid].clicked) {
+            record[bookId][pageid].clicked = [];
+        }
         if(!record[bookId][pageid].clicked.includes(clickid)) {
             record[bookId][pageid].clicked.push(clickid);
             record[bookId][pageid].time = Date.now();

@@ -194,6 +194,10 @@ toastr.options = {
                     $(line).find('.progressNumber')[0].innerText = `${parseFloat(progress)} %`;
                     $(line).find('.progress')[0].style.width = `${progress}%`;
 
+                    if(progress == 100) { // 완료된 학습의 버튼 텍스트 '복습하기'로 변경
+                        $(line).find('.studyBtn')[0].innerText = '복습하기';
+                    }
+
                 });
                 
             })

@@ -277,7 +277,7 @@ const myPage = {
                         text:'0%',
                         style: {
                             width: 40,
-                            color: 'gray'
+                            color: '#003887'
                         }
                     },
                     {
