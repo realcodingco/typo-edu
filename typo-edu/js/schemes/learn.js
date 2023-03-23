@@ -109,7 +109,7 @@ const learn = {
                         text: 'other_houses',
                         className: 'material-symbols-outlined homeicon',
                         onClick: e => {
-                            location.href = `index.html?mid=${mid}`;
+                            location.href = `index.html?p_userid=${mid}&edustart=${crsStart}`;
                         }
                     },
                     {
@@ -298,7 +298,7 @@ const learn = {
                                 text : 'apps',
                                 onClick: e => {
                                     const course = new URLSearchParams(location.search).get("course");
-                                    location.href = `index.html?mid=${mid}#${course}`;
+                                    location.href = `index.html?p_userid=${mid}&edustart=${crsStart}#${course}`;
                                 },
                                 children: [
                                     {

@@ -189,7 +189,7 @@ toastr.options = {
                     
 
                     if(lastPage == null) lastPage = 1; //완료한 페이지가 없는 경우
-                    $(line).find('a')[0].href = `makeroom.html?mid=${mid}&course=${cid}&book=${bid}&page=${lastPage}`;
+                    $(line).find('a')[0].href = `makeroom.html?p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     $(line).find('p')[0].innerText = books[o].title;
                     $(line).find('.progressNumber')[0].innerText = `${parseFloat(progress)} %`;
                     $(line).find('.progress')[0].style.width = `${progress}%`;
@@ -229,7 +229,7 @@ toastr.options = {
                     return;
                 }
                 window.location.hash = '';
-                window.location.href = 'makeroom.html?mid=' + mid;
+                window.location.href = 'makeroom.html?p_userid=' + mid;
             });
 
     }
@@ -274,7 +274,7 @@ toastr.options = {
                             }
                         }
                     }
-                    app.find('a')[0].href = `makeroom.html?mid=${mid}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                    app.find('a')[0].href = `makeroom.html?p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                 }
                 app.find('a')[0].innerText = json.title;
                 if(stepList.length != 0) {
