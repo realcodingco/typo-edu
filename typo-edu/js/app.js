@@ -9,18 +9,20 @@ toastr.options = {
     initDatabase();
     let padBg, courseData, bookData, userData;
     
-    const mid = new URLSearchParams(location.search).get('mid');
+    const mid = new URLSearchParams(location.search).get('p_userid');
+    const crsStart = new URLSearchParams(location.search).get('edustart');
 
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
         getUserData(function(data) {
             userData = data;
-            // console.log(userData)
+            console.log(userData)
             init();
         });
     }
 
     window.getUserData = getUserData;
     window.mid = mid;
+    window.crsStart = crsStart;
 
     /**
      * 페이지 초기화
@@ -191,6 +193,7 @@ toastr.options = {
                     $(line).find('p')[0].innerText = books[o].title;
                     $(line).find('.progressNumber')[0].innerText = `${parseFloat(progress)} %`;
                     $(line).find('.progress')[0].style.width = `${progress}%`;
+
                 });
                 
             })
@@ -200,11 +203,18 @@ toastr.options = {
         }
         //mid별 수강 코스 가져오기 
         // toastr.success('mid별 수강목록 가져오기가 필요합니다.<br> 지금은 그래머과정을 공통으로 가져옵니다.')
-        appendCourseList('9627cb42');        
+        appendCourseList('9627cb42');
+        
+        // 남은 수강일 표시   
+        const eduStart = new Date(crsStart.substring(0,4), crsStart.substring(4, 6) - 1, 1);
+        const eduEnd = new Date(eduStart.getFullYear(), eduStart.getMonth()+1, 0);
+        const diff = eduEnd - new Date();
+        const diffDay = Math.floor(diff / (1000*60*60*24));
+        $('.deadline')[0].innerText = `D - ${diffDay + 1}`
     }
 
     /**
-     * 학습자 생성 앱 목록 생성
+     * 학습자 생성 앱 목록 생성 (pending)
      */
     function openAppStore() {
         padBg.empty();

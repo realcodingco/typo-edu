@@ -177,17 +177,17 @@ const myPage = {
         children: [
             {
                 kind: 'box',
-                onClick: e => {
-                    if(e.target != e.currentTarget) {
-                        e.currentTarget.click();
-                        return;
-                    }
+                // onClick: e => {
+                //     if(e.target != e.currentTarget) {
+                //         e.currentTarget.click();
+                //         return;
+                //     }
                      
-                    $(e.target).next().slideToggle(500, () => {
-                        const target = $(e.target).children()[0];
-                        target.innerText = target.innerText == 'arrow_right' ? 'arrow_drop_down' : 'arrow_right';
-                    });
-                },
+                //     $(e.target).next().slideToggle(500, () => {
+                //         const target = $(e.target).children()[0];
+                //         target.innerText = target.innerText == 'arrow_right' ? 'arrow_drop_down' : 'arrow_right';
+                //     });
+                // },
                 style: {
                     padding: '6px 10px 0px 10px',
                     // borderBottom: '1px solid white',
@@ -211,6 +211,7 @@ const myPage = {
                     },
                     {
                         kind: 'box', // 남은 수강기간 d-day
+                        className: 'deadline',
                         text : 'D-20',
                         style: {
                             width: 'auto',

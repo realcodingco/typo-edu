@@ -207,16 +207,17 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         }
                     }
 
-                    $('.lessonWindow').toggleClass('half');
+                    $('.lessonWindow').addClass('half');
                      //, inline:'end'
+                     e.target.scrollIntoView({block:'start'});
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start'});
+                        
                         $('.lessonBook')[0].style.overflowY = 'hidden';
                         e.target.value = 'DONE';
                     }, 500);
                 }
                 else {
-                    $('.lessonWindow').toggleClass('half');
+                    $('.lessonWindow').removeClass('half');
                     setTimeout(() => {
                         $('.lessonBook')[0].style.overflowY = 'auto';
                         e.target.scrollIntoView({block:'start'});
@@ -316,15 +317,15 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         }
                     }
         
-                    $('.lessonWindow').toggleClass('half');
+                    $('.lessonWindow').addClass('half');
+                    e.target.scrollIntoView({block:'start'});
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start'});
                         $('.lessonBook')[0].style.overflowY = 'hidden';
                         e.target.value = 'DONE';
                     }, 500);
                 }
                 else {
-                    $('.lessonWindow').toggleClass('half');
+                    $('.lessonWindow').removeClass('half');
                     $('.lessonBook')[0].style.overflowY = 'auto';
                     setTimeout(() => {
                         e.target.scrollIntoView({block:'start'});
