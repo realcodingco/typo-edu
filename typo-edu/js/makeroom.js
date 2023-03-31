@@ -15,6 +15,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     const bookId = params.get('book'); 
     const page = params.get('page');
     const quiz = params.get('q');
+    const crsStart = params.get('edustart');
     let userData, record, emulator, editSection, pageData, timer;
 
     if(location.pathname.includes('makeroom')) { // makeroom 페이지에서만 화면생성
@@ -576,8 +577,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             let second = testTime % 60;
             startTimer(minute, second);
         }
-        
-        
     }
 
     /**
@@ -806,7 +805,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             record.progress[bookId] = bookData;
             // console.log(record,'코드기록')
             // 데이터 업데이트 저장.
-            updateUserData(record);
+            updateProgressData(record);
         }
 
         editor.blur();
@@ -1028,18 +1027,21 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             bookData[pageid].time = Date.now();
         }
         record.progress[bookId] = bookData;
-        updateUserData(record);
+        updateProgressData(record);
     }
 
     /**
-     * 학습자 기록 업데이트
+     * 학습자 진도기록 업데이트
      * @param {*} record 
      */
-    function updateUserData(record) {
+    function updateProgressData(record) {
         // 교재 편집모드 에서는 update 제외
         if(new URLSearchParams(location.search).get('edit') == 'on') {
             return;
         } 
+        if(!isTakingClass(crsStart)) { // 수강기간이 아니면 기록되지 않도록
+            return;
+        }
         userData.course[crs] = record;
         userUpdateDocument(`users/${mid}`, userData);
     }

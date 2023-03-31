@@ -24,8 +24,7 @@ toastr.options = {
         getUserData(function(data) {
             let ymonth = crsStart.substring(0,6);
             userData = data; // 그룹의 전체 데이터
-            console.log(userData, 11)
-            
+            // console.log(userData, 11)
             //입과 대상인지 확인
             getEnroll(groupId, function(result) { 
                 if(result) {
@@ -84,6 +83,7 @@ toastr.options = {
     window.mid = mid;
     window.crsStart = crsStart;
     window.crs = crs;
+    window.isTakingClass = isTakingClass;
 
     /**
      * 페이지 초기화
@@ -204,12 +204,7 @@ toastr.options = {
             let target = $(pop).find('.body-content')[0];
             getSolve(target, quizData);
         }
-        //현재 시점이 수강기간에 포함되는지 체크
-        const isTakingClass = () => {
-            const today = new Date();
-            const thisDay = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2, '0')}01`
-            return crsStart == thisDay;
-        }
+
         calcProgress(function(result){
             if(quizRecord.score) { //최종 제출된 상태
                 quizButton.innerText = '결과 보기';
@@ -218,7 +213,7 @@ toastr.options = {
                         
                 }
             } 
-            else if(!isTakingClass()) { // 수강 기간이 아니면 버튼 없애기
+            else if(!isTakingClass(crsStart)) { // 수강 기간이 아니면 버튼 없애기
                 quizButton.onclick = e => {
                     toastr.error('수강기간이 아니므로 응시할 수 없습니다.');
                 }
@@ -235,7 +230,16 @@ toastr.options = {
             }
         });
     }
-
+    /**
+     * 현재 시점이 수강기간에 포함되는지 체크
+     * @param {*} yyyymmdd 
+     * @returns 
+     */
+    function isTakingClass(yyyymmdd) {
+        const today = new Date();
+        const thisDay = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2, '0')}01`
+        return yyyymmdd == thisDay;
+    }
     /**
      * 학사모 아이콘 클릭이벤트 - 내 강의 목록 생성 : 진도확인
      */
@@ -403,7 +407,6 @@ toastr.options = {
                     const percent = totalProgress / books.length;
                     const total = parseFloat(percent.toFixed(2));
                     curProgress = total;
-                    console.log(curProgress, '----')
                     if(fn) fn(total);
                 }
             });

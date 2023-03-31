@@ -322,5 +322,28 @@ const admin = {
                 }
             }
         ]
+    },
+    progressBar : {
+        kind: 'box',
+        className: 'progressBar',
+        children: [
+            {
+                kind: 'box',
+                style: {
+                    textAlign: 'left',
+                    width: 'calc(100% - 30px)'
+                }
+            },
+            {
+                kind: 'box',
+                text: 'x',
+                style: {
+                    float: 'right',
+                    width: 30,
+                    height: 18
+                }
+                
+            }
+        ]
     }
 }

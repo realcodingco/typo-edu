@@ -16,3 +16,12 @@
 .solveUnit :nth-child(2):hover{
     height: auto;
 }
+.progressBar{
+    width: 33%;
+    padding: 2px;
+    margin: 1px;
+    border: 1px solid #E7D6FF;
+}
+.progressBar.selected{
+    border: 1px solid red;
+}

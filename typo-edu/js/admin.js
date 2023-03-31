@@ -1,6 +1,7 @@
 (function(){
     window.getSolve = getSolve;
-    if(location.hash != '#tohj'){
+
+    if(!location.pathname.includes('admin')){
         return;
     }
     initDatabase();
@@ -236,7 +237,6 @@
         if(answer) {
             delete groupData[mid].course[data.crs].quiz;
             totalData[mid] = groupData[mid];
-            console.log(groupData[mid], 'updated');
             userUpdateDocument(`users/${mid}`, groupData[mid], function(result){
                 toastr.success('삭제되었습니다.');
                 $(e.target).siblings('span')[0].innerText = '평가점수 : 미응시';
@@ -261,7 +261,6 @@
             // course[src].progress 삭제
             delete groupData[mid].course[data.crs].progress;
             totalData[mid] = groupData[mid];
-            console.log(groupData[mid], 'updated');
             userUpdateDocument(`users/${mid}`, groupData[mid], function(result){
                 toastr.success('삭제되었습니다.');
                 $(e.target).siblings('span')[0].innerText = '학습진도율 : 0%';
@@ -270,7 +269,6 @@
                 $($(e.target).parents()[1]).find('.progressList').empty();
                 $($(e.target).parents()[1]).find('.progressList')[0].style.display = 'none';
             });
-            
         }
     }
 
@@ -381,6 +379,7 @@
     
                 //화면에 출력
                 progData[pos] = { 
+                    bid : bid,
                     title : bookData[bid].title,
                     progress : progress
                 };
@@ -389,9 +388,19 @@
                 count++;
                 if(count == Object.keys(books).length) {
                     for(var p=0; p<progData.length; p++){
-                        const bar = box().appendTo(target).width('24%').padding(2).margin(1).border('1px solid #E7D6FF').align('center')
-                             .text(progData[p].title + ' ( ' + progData[p].progress + '% )');
+                        const bar = BX.component(admin.progressBar).appendTo(target);
+                        // box().appendTo(target).width('24%').padding(2).margin(1).border('1px solid #E7D6FF').align('center')
+                        //      .text(progData[p].title + ' ( ' + progData[p].progress + '% )');
+                        bar.children()[0].innerText = progData[p].title + ' ( ' + progData[p].progress + '% )';
                         bar[0].style.background = `linear-gradient(90deg, rgba(231,214,255,1) ${progData[p].progress}%, rgba(194,255,0,0) ${progData[p].progress}%)`;
+                        if(progData[p].progress == 0){
+                            bar.children()[1].innerText = ' ';
+                        }
+                        else {
+                            bar.children()[1].dataset.crs = crs;
+                            bar.children()[1].dataset.bookid = progData[p].bid;
+                            bar.children()[1].onclick = initChapProgress;
+                        }
                     }
                     let finalprogress = parseFloat(totalProgress/books.length)
                     if(finalprogress < 1) finalprogress = finalprogress.toFixed(1);
@@ -412,7 +421,40 @@
             
         });
     }
+    /**
+     * 진도 내역에서 챕터별 기록 삭제 버튼 클릭이벤트 핸들러
+     * @param {*} e 
+     */
+    function initChapProgress(e){
+        const bar = $(e.target).parent()[0];
+        $(bar).addClass('selected');
 
+        const fnProcess = () => {
+            const topParent = $(e.target).parents()[3];
+            const mid = $(topParent).find('.userId')[0].innerText
+            const data = e.target.dataset;
+ 
+            const isDelete = confirm('진도 기록을 삭제하시겠습니까?');
+            if(isDelete){
+                delete groupData[mid].course[data.crs].progress[data.bookid];
+                totalData[mid] = groupData[mid];
+                userUpdateDocument(`users/${mid}`, groupData[mid], function(result){
+                    toastr.success('삭제되었습니다.');
+                    $(bar).removeClass('selected');
+                    const prevTxt = $(bar).children()[0].innerText;
+                    $(bar).children()[0].innerText = prevTxt.substring(0, prevTxt.indexOf('(')) + '(0%)';
+                    bar.style.background = `rgba(194,255,0,0)`;
+                    $(bar).children()[1].innerText = ' ';
+                    $(bar).children()[1].onclick = 'disable';
+                });
+            }
+            else {
+                $(bar).removeClass('selected');
+            }
+        }
+        setTimeout(fnProcess, 500);
+        
+    }
     /**
      * 선택상자 붙이기
      * @param {*} target 붙일 대상(부모요소)
