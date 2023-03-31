@@ -40,11 +40,17 @@ function userWriteDocument(path, data, callback) {
  * @param {object} data 
  * @param {function} callback 
  */
-function userUpdateDocument(path, data, callback) {
+function userMergeDocument(path, data, callback) {
     BX.db.firestore().doc(path).set(data, { merge: true })
         .then(callback)
         .catch(callback);
 }
+function userUpdateDocument(path, data, callback) {
+    BX.db.firestore().doc(path).update(data)
+        .then(callback)
+        .catch(callback);
+}
+
 
 /**
  * 문서에서 데이터를 읽는다.

@@ -608,8 +608,18 @@ const edit = {
                     },
                     {
                         kind: 'option',
-                        html: '퀴즈',
+                        html: '퀴즈(교재삽입)',
                         value : 'quiz'
+                    },
+                    {
+                        kind: 'option',
+                        html: '퀴즈 문제(응시용)',
+                        value : 'quizQuestion' 
+                    },
+                    {
+                        kind: 'option',
+                        html: '퀴즈 제출(응시용)',
+                        value : 'finalQuizSubmit'
                     },
                     {
                         kind: 'option',
@@ -1495,4 +1505,98 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
             edit.quizBtn
         ]
     },
+    quizQuestion: { //퀴즈 응시용 문제 입력폼
+        kind: 'box',
+        children: [ // 텍스트, 문항번호
+            {
+                kind: 'input',
+                name: 'quizNo',
+                placeholder: '문항번호',
+                style: {
+                    width: '45%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'answer',
+                placeholder: '정답',
+                style: {
+                    width: '45%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'textarea',
+                name: 'question',
+                placeholder: '문제 입력',
+                spellcheck: 'false',
+                style: {
+                    width: '95%',
+                    height: 70,
+                    margin: '5px auto',
+                    padding: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'box',
+                className: 'finalQuizExample',
+                children: [
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기1',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기2',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기3',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기4',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    submitQuiz: { //퀴즈 응시용 제출버튼 입력폼 (입력내용없음)
+        kind: 'box',
+        children: [ // 
+            
+        ]
+    }
 }

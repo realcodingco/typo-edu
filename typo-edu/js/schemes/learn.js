@@ -109,7 +109,7 @@ const learn = {
                         text: 'other_houses',
                         className: 'material-symbols-outlined homeicon',
                         onClick: e => {
-                            location.href = `index.html?p_userid=${mid}&edustart=${crsStart}`;
+                            location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
                         }
                     },
                     {
@@ -230,8 +230,165 @@ const learn = {
             }
         ]
     },
+    quizGuide: {
+        kind: 'box',
+        className: 'quizGuidePop',
+        children: [
+            {
+                kind: 'h2',
+                html:'퀴즈 응시 안내<br>',
+            },
+            {
+                kind: 'box',
+                style: {
+                    display: 'flex',
+                    margin: '30px 0',
+                    flexWrap: 'wrap',
+                    width: '100%'
+                },
+                children: [
+                    {
+                        kind: 'box',
+                        text: '• 문제구성 : 객관식 20문항',
+                        style: {
+                            width:'40%',
+                            flex: 1
+                        }
+                    },
+                    {
+                        kind: 'box',
+                        text: '• 응시시간 : 총 60분',
+                        style: {
+                            width:'40%',
+                            flex: 1
+                        }
+                    }
+                ]
+            },
+            {
+                kind: 'box',
+                text: '- 유의 사항 -',
+                style: {
+                    fontWeight: 300,
+                    margin: '20px 0px'
+                }
+            },
+            {
+                kind: 'p',
+                html: '응시 기회는 <font color=#2DD8FF>단 1회</font>로, 최종제출 후에는 어떠한 경우라도 재응시 할 수 없습니다.'
+            },
+            {
+                kind: 'p',
+                text: '학습기간 내에 원하는 시간에 응시할 수 있습니다.'
+            },
+            {
+                kind: 'p',
+                html: '응시 제한 시간은 <font color=#2DD8FF>초기 열람 시간을 기준으로 60분</font>이며,<br>응시 중 제한시간이 초과되거나 학습종료일 자정이 되면 자동으로 제출됩니다.'
+            },
+            {
+                kind : 'p',
+                html: '응시 페이지를 벗어나거나 비정상 종료되었더라도<br>제한시간이 남아 있다면 재입장 및 계속 응시가 가능합니다.'
+            },
+            {
+                kind : 'p',
+                html : '모든 문제의 풀이를 마친 후, 페이지 하단 <font color = yellowgreen>"제출하기" 녹색 버튼을 클릭</font>해야 최종 제출이 완료됩니다.'
+            },
+            {
+                kind : 'p',
+                html : '아래의 <font color=#2DD8FF>시작하기</font>를 클릭하면 퀴즈 응시가 시작되며, 제한시간 타이머가 작동합니다.'
+            },
+            {
+                kind : 'button',
+                text : '시작하기',
+                style: {
+                    background: '#2DD8FF',
+                    border: 0,
+                    borderRadius: 8,
+                    padding: '10px 50px',
+                    marginTop: 20
+                }
+            }
+        ]
+        
+    },
+    quizWindow : {
+        kind: 'box',
+        className: 'quizWindow',
+        oncopy: 'return false', // 복사 금지
+        children: [
+            {
+                kind: 'box', //타이머
+                className:'timerDisplay',
+                // text : '60:00',
+            },
+            {
+                kind: 'box',
+                className: 'quizTimer',
+            },
+            {
+                kind: 'box',
+                className: 'quizPaper',// 문제출력
+            },
+            {
+                kind: 'span',
+                text: 'keyboard_double_arrow_up',
+                className: 'material-symbols-outlined',
+                onClick: e => {
+                    $(e.target).prev().scrollTop({top: '0px', behavior: 'smooth'});
+                },
+                style: {
+                    position: 'absolute',
+                    right: 20,
+                    bottom: 60,
+                    color:'gray'
+                }
+            },
+            {
+                kind : 'box',
+                className: 'bookHeader',
+                children: [
+                    {
+                        kind: 'box',
+                        style: {
+                            width: 'auto',
+                            zIndex: 10
+                        },
+                        children: [
+                            {
+                                kind: 'span',
+                                className: 'material-symbols-outlined listbtn',
+                                text : 'apps',
+                                onClick: e => {
+                                    location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#`;
+                                },
+                                children: [
+                                    {
+                                        kind: 'span',
+                                        className: 'tooltipText',
+                                        text: '이전으로 돌아가기'
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        kind:'box',
+                        // className: 'bookNav',
+                        text : '문제에서 정답에 해당하는 보기문항을 클릭하세요.',
+                        style:{
+                            fontSize: 12,
+                            fontWeight: 300,
+                            padding: 10,
+                            // textAlign: 'left',
+                            color: '#C90043'
+                        }
+                    }
+                ]
+            }
+        ]
+    },
     lessonWindow: {
-        kine: 'box',
+        kind: 'box',
         className: 'lessonWindow', 
         oncopy: 'return false', // 교재내용 복사 금지
         children: [
@@ -297,8 +454,7 @@ const learn = {
                                 className: 'material-symbols-outlined listbtn',
                                 text : 'apps',
                                 onClick: e => {
-                                    const course = new URLSearchParams(location.search).get("course");
-                                    location.href = `index.html?p_userid=${mid}&edustart=${crsStart}#${course}`;
+                                    location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#list`;
                                 },
                                 children: [
                                     {

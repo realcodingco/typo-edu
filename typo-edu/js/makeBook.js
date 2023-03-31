@@ -130,6 +130,14 @@ function appendEditTool(data, order) {
                 }
             }
         }
+        if(data.example) {
+            const exampleSheet = $(b).find('.finalQuizExample');
+            for(let i in data.example) {
+                exampleSheet.children()[i].value = data.example[i];
+            }
+            
+        }
+        //-->
     }
 
     return b;
@@ -343,12 +351,21 @@ function colletData(target) { // 추가버튼을 기준으로
             const textareas = $(el).find('textarea');
             let examples = [];
             for(let example of textareas) {
-                if(example.value && example.name != 'question') examples.push(example.value);
+                if(example.valuequizExample && example.name != 'question') examples.push(example.value);
             }
             quizdata.example = examples;
             quiz.push(quizdata);
         });
         data.quiz = quiz;
+    }
+    if(name == 'quizQuestion') {
+        data.question = $(parent[1]).find('textarea[name=question]')[0].value;
+        let examples = [];
+        const textareas = $($(parent[1]).find('.finalQuizExample')[0]).find('textarea');
+        for(let example of textareas) {
+            if(example.value) examples.push(example.value);
+        }
+        data.example = examples;
     }
 
     return data;
@@ -408,7 +425,7 @@ function loadEditTool(e) {
     $(parent[2]).find('.stylemaker').empty();
     $(target).empty();
     let selected = combobox.options[combobox.selectedIndex].value;
-    if(selected == 'ending' || selected == 'none') return;
+    if(selected == 'ending' || selected == 'none' || selected == 'finalQuizSubmit') return;
 
 
     const component = BX.component(editInput[selected]).appendTo(target);

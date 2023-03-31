@@ -57,7 +57,8 @@ const main = {
                 kind: 'box',
                 text: '반갑습니다. 000 학습자님.',
                 style: {
-                    marginBottom: 10
+                    marginBottom: 10,
+                    fontFamily:'"GmarketSans", sans-serif'
                 }
             },
             {
@@ -119,6 +120,54 @@ const main = {
             }
         ]
     },
+    quizResultPop : {
+        kind: 'box',
+        className: 'popup-wrap',
+        id : 'popup',
+        children: [
+            {
+                kind: 'box',
+                className: 'popup',
+                children: [
+                    {
+                        kind: 'box',
+                        className: 'popup-head',
+                        children: [
+                            {
+                                kind:'span',
+                                className:'head-title',
+                                text: '수료'
+                            }
+                        ]
+                    },
+                    {
+                        kind: 'box',
+                        className: 'popup-body',
+                        children: [
+                            {
+                                kind: 'box',
+                                className: 'body-content'
+                            }
+                        ]
+                    },
+                    {
+                        kind: 'box',
+                        className: 'popup-foot',
+                        onClick: e => {
+                            $("#popup").fadeOut();
+                        },
+                        children: [
+                            {
+                                kind: 'span',
+                                className: 'pop-btn confirm',
+                                text: '확인'
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
 };
 const myPage = {
     header: {
@@ -206,7 +255,7 @@ const myPage = {
                         style: {
                             width: 'auto',
                             fontSize: 16,
-                            marginRight:20
+                            marginRight:10
                         }
                     },
                     {

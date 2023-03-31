@@ -11,12 +11,12 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     setVh();
 
     const params = new URLSearchParams(location.search);
-    const course = params.get('course'); //cid
+    const crs = params.get('p_cpsubj');
     const bookId = params.get('book'); 
     const page = params.get('page');
-    let userData, record, emulator, editSection, pageData;
+    const quiz = params.get('q');
+    let userData, record, emulator, editSection, pageData, timer;
 
-    window.createComponent = createComponent;
     if(location.pathname.includes('makeroom')) { // makeroom 페이지에서만 화면생성
         init();
     }
@@ -28,28 +28,42 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         }
         getUserData(function(data) {
             userData = data;
-            record = data[course] || {};
-            if(!record[bookId]) record[bookId] = {};
-
-            BX.component(learnWindow.main).appendTo(topBox);
-            editSection = $('.editSection');
-            BX.component(learn.lessonWindow).appendTo(editSection[0]);
-            emulator = $('.emulator');
-            emulator.find('.appWindow')[0].addEventListener('mousemove', mousemove);
-            emulator.find('.appWindow')[0].addEventListener('mouseout', mouseout);
-            const consoleDiv = $('.consolewindow');
-            $('.editSection .fn-btn > :contains("play_arrow")')[0].onclick = runApp; //실행 버튼
-
-            window.consoleDiv = consoleDiv;
-            window.saveUserData = saveUserData;
-            window.openPractice = openPractice;
+            record = data.course[crs];
+            if(!record.progress) record.progress = {};
+            if(!quiz && !record.progress[bookId]) record.progress[bookId] = {};
+            
+            if(quiz) {
+                // window.addEventListener('beforeunload', (event) => {
+                //     event.preventDefault();
+                //     event.returnValue = '';
+                // });
+                const quizWindow = BX.component(learn.quizWindow).appendTo(topBox);
+                const quizGuide =BX.component(learn.quizGuide).appendTo(topBox);
+                // 팝업 시작하기 버튼 클릭이벤트 
+                quizGuide.find('button')[0].onclick = openQuiz;
+            }
+            else {
+                BX.component(learnWindow.main).appendTo(topBox);
+                editSection = $('.editSection');
+                emulator = $('.emulator');
+                emulator.find('.appWindow')[0].addEventListener('mousemove', mousemove);
+                emulator.find('.appWindow')[0].addEventListener('mouseout', mouseout);
+                const consoleDiv = $('.consolewindow');
+                $('.editSection .fn-btn > :contains("play_arrow")')[0].onclick = runApp; //실행 버튼
+                window.consoleDiv = consoleDiv;
+                window.saveUserData = saveUserData;
+                window.openPractice = openPractice;
+                BX.component(learn.lessonWindow).appendTo(editSection[0]);
+            }
 
             //교재 붙이기
             if(bookId) { // 교재학습모드
-                const resetButton = $('.editSection .fn-btn > div:contains("restart_alt")');
-                resetButton.show();
-                resetButton[0].onclick = refreshApp; //리셋 버튼
-                $.ajax({url: `./lecture/${course}/${bookId}/${bookId}.json`, dataType: "json"})
+                if(!quiz){
+                    const resetButton = $('.editSection .fn-btn > div:contains("restart_alt")');
+                    resetButton.show();
+                    resetButton[0].onclick = refreshApp; //리셋 버튼
+                }
+                $.ajax({url: `./lecture/${crs}/${bookId}/${bookId}.json`, dataType: "json"})
                 .done((json) => {
                     pageData = json.pages;
 
@@ -57,8 +71,15 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         toastr.error('작성된 교재가 없습니다.');
                         return;
                     }
-                    lessonBook(pageData).appendTo($('.lessonBook')[0]);
-                    checkStudied();
+                    
+                    if(quiz){ //퀴즈 기록으로 
+                        quizBook(pageData).appendTo($('.quizPaper')[0]);
+                        checkSolved();
+                    } 
+                    else { //진도 기록으로 
+                        lessonBook(pageData).appendTo($('.lessonBook')[0]);
+                        checkStudied();
+                    }
                 })
                 .fail((xhr, status, error) => {})
             } 
@@ -69,31 +90,82 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 $('.aceEditor').addClass('play');
                 $('.emulator').addClass('play');
             }
-
-            const targetApp = location.hash.slice(1);
-            setTimeout(() => {
-                const editor =  $('.ace_editor')[0].aceEditor;
-                if(targetApp == 'free') {
-                    $('.emulator').show();
-                }
-                else if(targetApp) {
-                    $('.emulator').show(); 
-                    const app = BX.components[targetApp];
-                    // const code = app.appCode; console.log(code, 25);
-                    editSection.find('.appTitle')[0].innerText = app.appTitle;
-                    app.bx().appendTo($('.appWindow')[0]);
-                    
-                    editor.session.setMode("ace/mode/javascript");
-                    // editor.setValue(code, 1);
-                    editor.focus();
-                    // runApp();
-                }
-                // editor.getSession().on('change', editorUpdate);
-                $(editor).on('focus', e => {
-                    clickedRunBtn = false;
-                });
-            }, 500);
+            if(!quiz){
+                const targetApp = location.hash.slice(1);
+                setTimeout(() => {
+                    const editor =  $('.ace_editor')[0].aceEditor;
+                    if(targetApp == 'free') {
+                        $('.emulator').show();
+                    }
+                    else if(targetApp) {
+                        $('.emulator').show(); 
+                        const app = BX.components[targetApp];
+                        // const code = app.appCode; console.log(code, 25);
+                        editSection.find('.appTitle')[0].innerText = app.appTitle;
+                        app.bx().appendTo($('.appWindow')[0]);
+                        
+                        editor.session.setMode("ace/mode/javascript");
+                        // editor.setValue(code, 1);
+                        editor.focus();
+                        // runApp();
+                    }
+                    // editor.getSession().on('change', editorUpdate);
+                    $(editor).on('focus', e => {
+                        clickedRunBtn = false;
+                    });
+                }, 500);
+            }
         });
+    }
+    /**
+     * 타이머 동작처리
+     * @param {number} minute 분 설정
+     * @param {number} second 초 설정
+     */
+    function startTimer(minute, second){
+        timer = setInterval(() => {
+            $('.quizTimer')[0].style.animationPlayState = 'running';
+            if(second == 0) second = 60;
+            if(second == 60) minute--;
+            second--;
+            
+            $('.timerDisplay')[0].textContent = `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+            
+            //남은 시간을 1초단위로 기록
+            userData.course[crs].quiz.testTime = (minute * 60) + second;
+            userUpdateDocument(`users/${mid}`, userData);
+
+            if(minute == 0 && second == 0) {
+                // 시간 종료. 최종 제출 처리
+                clearInterval(timer);
+                $('.quizTimer')[0].style.animationPlayState = 'paused';
+            }
+        }, 1000);
+    }
+
+    /**
+     * 퀴즈 팝업 시작하기 버튼 클릭 이벤트 핸들러
+     * @param {*} e 
+     */
+    function openQuiz(e) {
+        //한번 더 체크?
+        let testTime = userData.course[crs].quiz.testTime;
+        if(!testTime){
+            testTime = 3600;
+            userData.course[crs].quiz.testTime = testTime;
+            userUpdateDocument(`users/${mid}`, userData);
+        }
+        if(testTime <= 0) { // 응시 시간 초과 - 결과 자동 제출
+
+            return;
+        }
+
+        $('.quizGuidePop')[0].remove();
+        let minute = Math.floor(testTime / 60);
+        let second = testTime % 60;
+        $('.timerDisplay')[0].textContent = `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`;
+        
+        startTimer(minute, second);
     }
 
     /**
@@ -196,9 +268,8 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         // pageId 전달
                         const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
                         $('.appTitle')[0].dataset.pid = pageId;
-
-                        if(record && record[bookId]) {
-                            const pageRecord = record[bookId][pageId];
+                        if(record.progress && record.progress[bookId]) {
+                            const pageRecord = record.progress[bookId][pageId];
                             if(pageRecord && pageRecord.code) {
                                 if(pageRecord.code[codeId]) {
                                     const codeRecord = pageRecord.code[codeId].code;
@@ -307,8 +378,8 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
                         $('.appTitle')[0].dataset.pid = pageId;
 
-                        if(record && record[bookId]) {
-                            const pageRecord = record[bookId][pageId];
+                        if(record.progress && record.progress[bookId]) {
+                            const pageRecord = record.progress[bookId][pageId];
                             if(pageRecord && pageRecord.code) {
                                 if(pageRecord.code[codeId]) {
                                     const codeRecord = pageRecord.code[codeId].code;
@@ -348,7 +419,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         else if(component == 'image') {
             const img = BX.component(lesson.imageBox);
             img.children()[0].style.width = unit.width.includes('%') ? unit.width : `${unit.width}px`;
-            img.children()[0].src = unit.src;
+            img.children()[0].src = unit.src.replace('9627cb42', 'L018761');
             result = img;
         }
         else if(component == 'hidebox') {
@@ -435,9 +506,95 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 $(`#${e.target.name}`).addClass('on');
             }
         }
+        else if(component == 'quizQuestion') { // 응시용 퀴즈교재 컴포넌트
+            const bg = box();
+            const quest = BX.component(lesson[component]).appendTo(bg);
+            quest.children()[0].innerText = unit.quizNo + '.';
+            quest.children()[1].innerHTML = unit.question;
+
+            const exp = BX.component(lesson['finalQuizExample']).appendTo(bg);
+            const examples = unit.example;
+            for(var i=0; i<examples.length; i++) {
+                const bogi = BX.component(lesson['finalExp']).text(`(${i+1}) ${examples[i]}`).appendTo(exp);
+                bogi[0].dataset.no = i+1;
+                bogi[0].dataset.q = unit.quizNo;
+                bogi[0].onclick = checkedExample;
+            }
+
+            result = bg;
+        }
+        else if(component == 'finalQuizSubmit'){
+            result = BX.component(lesson.finalQuizSubmit);
+            result.find('.quizbutton')[0].onclick = submitQuiz;
+        }
+        
 
         return result;
     }
+
+    /**
+     * 퀴즈 최종 제출하기 버튼 클릭 이벤트 핸들러
+     * @param {*} e 
+     */
+    function submitQuiz(e) {
+        // 한번 확인 - 타이머 멈추기
+        clearInterval(timer);
+        $('.quizTimer')[0].style.animationPlayState = 'paused';
+
+        const isSubmit = confirm('최종 제출하시겠습니까?');
+        if(isSubmit){
+            let solve = userData.course[crs].quiz.solve? userData.course[crs].quiz.solve.detail : [];
+            if(solve.length > 0) {
+                let unsolved = solve.filter(o => Object.keys(o).length == 0);
+                if(unsolved.length > 0) { // 풀었지만 다 안푼거
+                    toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
+                }
+                else { // 다 풀었네
+                    let correct = solve.filter(o => o.correct).length; // 맞은 개수
+                    let incorrect = solve.length - correct; // 틀린갯수
+                    let score = 5 * correct;
+                    userData.course[crs].quiz.score = score;
+                    userData.course[crs].quiz.solve.correctCount = correct;
+                    userData.course[crs].quiz.solve.incorrectCount = incorrect;
+                    userData.course[crs].quiz.solve.time = Date.now();
+                    userUpdateDocument(`users/${mid}`, userData);
+                    //update 데이터 , 버튼은 숨기고, 제출되었다 안내하고 모든 버튼 클릭 이벤트 없애고
+                    $(e.target).hide();
+                    toastr.success('최종 제출되었습니다.');
+                    $('.quizexamples').each(function(i, exp) {
+                        exp.onclick = 'disable';
+                    })
+                }
+            } 
+            else { // 푼게 없잖아
+
+            }
+        }
+        else {
+            let testTime = userData.course[crs].quiz.testTime;
+            let minute = Math.floor(testTime / 60);
+            let second = testTime % 60;
+            startTimer(minute, second);
+        }
+        
+        
+    }
+
+    /**
+     * 퀴즈 보기 문항 클릭 이벤트 핸들러 
+     * @param {*} e 
+     * @returns 
+     */
+    function checkedExample(e) {
+        if(e.target != e.currentTarget){
+            e.currentTarget.click();
+            return;
+        }
+        $(e.target).addClass('checked');
+        $(e.target).siblings().removeClass("checked");
+        recordSolve(e.target);
+    }
+
     /**
      * 교재 내에서 practice direction의 에디터 열기 버튼을 클릭한 경우
      * @param {*} targetApp 
@@ -569,7 +726,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             if(deletedTarget) {
                 delete record[bookId][pageId].code[codeId];
                 let saveData = {};
-                saveData[course] = record;
+                saveData[crs] = record;
                 
                 //merge의 경우, 없는(삭제) 데이터는 그대로 남으므로, update 아닌 write로 저장
                 userWriteDocument(`users/${mid}`, saveData, (result) => {
@@ -632,19 +789,22 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 title : title
             };
 
-            if(!record[bookId]) {
-                record[bookId] = {};
-            }
+            // if(!record[bookId]) {
+            //     record[bookId] = {};
+            // }
+            const bookData = record.progress[bookId];
 
-            if(!record[bookId][pageId]) { // 페이지 데이터가 없으면
-                record[bookId][pageId] = {code : {}};
+            if(!bookData[pageId]) { // 페이지 데이터가 없으면
+                bookData[pageId] = {code : {}};
             }
 
             const inputCode = {};
             inputCode[codeId] = codeData; 
 
-            record[bookId][pageId].code = inputCode;
+            bookData[pageId].code = inputCode;
             
+            record.progress[bookId] = bookData;
+            // console.log(record,'코드기록')
             // 데이터 업데이트 저장.
             updateUserData(record);
         }
@@ -654,6 +814,53 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         // editorUpdate();
     }
 
+    function quizBook(pageData) {
+        const b = box();
+        const book = pageData;
+        
+        const drawPage = function(contents) {
+            const wrap = box().appendTo(b);
+            for(let [idx, unit] of contents.entries()) {
+                const created = createComponent(unit).appendTo(wrap);
+                
+                if(unit.comp == 'title') { //퀴즈는 페이지 아이디 감추기
+                    $(created).find('> *')[0].style.display = 'none';
+                }
+                // 퀴즈교재는 간격 4줄로 고정
+                for(var i=0; i<4; i++) {
+                    BX.component(lesson.enter).appendTo(wrap);
+                }
+            }
+        }
+
+        for(let page=0; page<book.length; page++) {
+            drawPage(Object.values(book[page])[0].content);
+        }
+
+        return b;
+    }
+
+    function recordSolve(target) {
+        if(location.pathname.includes('makeBook')) return; // 교재편집 중은 제외
+
+        let data = pageData[0];
+        let pageKey = Object.keys(data)[0];
+        let quest = data[pageKey].content; //배열
+        
+        const checkAnswer = (num) => {
+            return quest[num].answer
+        }
+
+        let solveDetail = {};
+        solveDetail.userInput = target.dataset.no;
+        solveDetail.correct = checkAnswer(target.dataset.q) == target.dataset.no;
+        solveDetail.question = quest[target.dataset.q].question;
+        solveDetail.time = Date.now();
+        //기록  보기를 선택할 때마다 
+        if(!userData.course[crs].quiz.solve) userData.course[crs].quiz.solve = {};
+        if(!userData.course[crs].quiz.solve.detail) userData.course[crs].quiz.solve.detail = new Array(20).fill({});
+        userData.course[crs].quiz.solve.detail[target.dataset.q-1] = solveDetail;
+    }
     /**
      * pageData로 교재 생성
      * @param {object} pageData 배열
@@ -798,38 +1005,29 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         return b;
     } 
 
-    // function getUserData() {
-    //     const result = JSON.parse(localStorage.getItem(mid));
-    //     return result || {};
-    // }
-
     /**
-     * 학습자 진도기록용 클릭이벤트 : 체크, 스크래치 박스 등 id를 가진 컨텐츠
+     * 학습자 진도기록용 클릭이벤트 : 체크, 스크래치 박스 등 id를 가진 컨텐츠 v1
      * @param {*} target 
      */
     function saveUserData(target) {
         const pageid = $($(target).parents()[1]).find('.pageidtag')[0].innerText;
         const clickid = target.id;
         if(!clickid) return;
-
-        if(!record[bookId]) {
-            record[bookId] = {};
-        }
-
-        if(!record[bookId][pageid]) {
-            record[bookId][pageid] = {
+    
+        const bookData = record.progress[bookId];
+        if(!bookData[pageid]) {
+            bookData[pageid] = {
                 clicked : []
             };
         }
-        if(!record[bookId][pageid].clicked) {
-            record[bookId][pageid].clicked = [];
+        if(!bookData[pageid].clicked) {
+            bookData[pageid].clicked = [];
         }
-        if(!record[bookId][pageid].clicked.includes(clickid)) {
-            record[bookId][pageid].clicked.push(clickid);
-            record[bookId][pageid].time = Date.now();
+        if(!bookData[pageid].clicked.includes(clickid)) {
+            bookData[pageid].clicked.push(clickid);
+            bookData[pageid].time = Date.now();
         }
-        // 기록
-        localStorage.setItem(mid, JSON.stringify(record));
+        record.progress[bookId] = bookData;
         updateUserData(record);
     }
 
@@ -842,15 +1040,31 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         if(new URLSearchParams(location.search).get('edit') == 'on') {
             return;
         } 
-        let saveData = {};
-        saveData[course] = record;
-        userUpdateDocument(`users/${mid}`, saveData);
+        userData.course[crs] = record;
+        userUpdateDocument(`users/${mid}`, userData);
     }
     /**
-     * 학습자 진도기록에서 체크된 항목 표시해주기
+     * 퀴즈교재 열람시 풀이기록이 있으면 표시하기
+     * @returns 
+     */
+    function checkSolved(){
+        // console.log('checkSolved', userData.course[crs].quiz.solve)
+        if(!userData.course[crs].quiz.solve) return;
+
+        const solved = userData.course[crs].quiz.solve.detail;
+        $('.finalQuizExample').each(function(i, el){
+            if(solved[i].userInput){
+                const target = $(el).find(`[data-no=${solved[i].userInput}]`)[0];
+                $(target).addClass('checked');
+            }
+        });
+    }
+
+    /**
+     * 교재 열람시 학습자 진도기록에서 체크된 항목 표시해주기
      */
     function checkStudied() {
-        const data = record[bookId];
+        const data = record.progress[bookId];
 
         //체크 기록 가져오기
         let studied = [];
@@ -869,6 +1083,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             checks.each(function(i, b) {
                 if(b.type == 'checkbox' && studied.includes(b.id)){
                     b.click();
+                    b.disabled = true;
                 }   
             });
             const hidebox = $('.hideb');
@@ -953,6 +1168,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             return false;
         }
     }
+    window.createComponent = createComponent;
 })();
 
 

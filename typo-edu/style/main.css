@@ -30,29 +30,14 @@
 }
 .myCourseListBox{
     height: calc(100% - 70px);
-    overflow: auto;
+}
+.myCourseBox{
+    height: 100%;
 }
 .myCourseBox span.material-symbols-outlined{
     margin-top: 2px;
     font-size: 25px;
-}
-.myCourseListBox::-webkit-scrollbar {
-    width: 10px;  /* 스크롤바의 너비 */
-    padding: 2px;
-    display: none;
-}
-
-.myCourseListBox::-webkit-scrollbar-thumb {
-    background: #d7dcfa; /* 스크롤바의 색상 */
-    border: 1px solid #584A52;
-    border-radius: 125px;
-}
-
-.myCourseListBox::-webkit-scrollbar-track {
-    background: rgba(45, 45, 245, 0.2);  /*스크롤바 뒷 배경 색상*/
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    background-clip: content-box; 
+    height: calc(100% -70px);
 }
 
 
@@ -108,6 +93,7 @@
     background-repeat: no-repeat;
     object-fit: scale-down;
 }
+
 .stepBook a{
     width: 100%;
     height: 100%;
@@ -118,8 +104,38 @@
     padding-top: 20px;
     line-height: 14px;
 }
+.studiedStepBook::before{
+    position: absolute;
+    left : 0;
+    top: 0;
+    content: '';
+    width: 70px;
+    height: 70px;
+    opacity: 0.5;
+    background: url('../lecture/done.png') no-repeat 0px 0px /100%;
+}
 .stepList{
     transition: 0.8s;
+    height: calc(100% - 40px);
+    overflow: auto;
+}
+.stepList::-webkit-scrollbar {
+    width: 10px;  /* 스크롤바의 너비 */
+    padding: 2px;
+    display: none;
+}
+
+.stepList::-webkit-scrollbar-thumb {
+    background: #d7dcfa; /* 스크롤바의 색상 */
+    border: 1px solid #584A52;
+    border-radius: 125px;
+}
+
+.stepList::-webkit-scrollbar-track {
+    background: rgba(45, 45, 245, 0.2);  /*스크롤바 뒷 배경 색상*/
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    background-clip: content-box; 
 }
 .stepBox{
     padding: 15px;
@@ -171,4 +187,77 @@
     height: 100% !important;
     border-radius: 0px;
     transition: 0.7s;
+}
+
+
+.popup-wrap{
+    display:flex;
+    font-family:'GmarketSans', sans-serif;
+    font-size: 14px;
+    background-color:rgba(0,0,0,.3);
+    justify-content:center;
+    align-items:center;
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    bottom:0;
+    display:none;
+    padding:15px;
+}
+.popup{
+    width:100%;
+    height: 90%;
+    max-width:800px;
+    /* background-color:#ffffff; */
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow: 5px 10px 10px 1px rgba(0,0,0,.3);
+}
+.popup-head{
+    width:100%;
+    height:50px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background-color:#264db5;
+}
+.head-title {
+    font-size: 30px;
+    /* font-style: italic; */
+    font-weight: 700;
+    text-align: center;
+    color: white;
+}
+.popup-body{
+    width:100%;
+    height: calc(100% - 100px);
+    background: rgba(73,95,216,0.9);
+}
+.body-content{
+    width:100%;
+    padding:30px;
+    text-align: center;
+}
+.body-titlebox{
+    text-align:center;
+    width:100%;
+    height:40px;
+    margin-bottom:10px;
+}
+.popup-foot{
+    width:100%;
+    height:50px;
+    background-color:#264db5;
+}
+.pop-btn{
+    display:inline-flex;
+    width:100%;
+    height:100%;
+    justify-content:center;
+    align-items:center;
+    color:#ffffff;
+    cursor:pointer;
+    border-right:1px solid #3b5fbf;
+    font-size: 18px;
 }

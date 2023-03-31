@@ -23,7 +23,7 @@
                         },
                         {
                             kind : 'img',
-                            src : './lecture/9627cb42/2eb7100f/grocery.png'
+                            src : './lecture/L018761/2eb7100f/grocery.png'
                         }
                     ]
                 },
@@ -39,7 +39,7 @@
                         },
                         {
                             kind : 'img',
-                            src : './lecture/9627cb42/2eb7100f/cloths.png'
+                            src : './lecture/L018761/2eb7100f/cloths.png'
                         }
                     ]
                 },
@@ -55,7 +55,7 @@
                         },
                         {
                             kind : 'img',
-                            src : './lecture/9627cb42/2eb7100f/furniture.png'
+                            src : './lecture/L018761/2eb7100f/furniture.png'
                         }
                     ]
                 }

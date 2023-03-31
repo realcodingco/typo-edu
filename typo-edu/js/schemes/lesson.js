@@ -52,6 +52,7 @@ const lesson = {
     },
     check : {
         kind : 'box',
+        className: 'clickRequired',
         onClick: e => {
             if(e.target.tagName == 'INPUT') {
                 return;
@@ -79,6 +80,7 @@ const lesson = {
                     if ( bookReady && $(e.target).prop('checked') ) {
                         saveUserData(e.target);
                         playSound('choice');
+                        e.target.disabled = true;
                     }
                     else {
 
@@ -170,6 +172,53 @@ const lesson = {
             {
                 kind : 'a',
                 target : '_blank'
+            }
+        ]
+    },
+    quizQuestion : { // 퀴즈응시 문제영역
+        kind: 'box',
+        style: {
+            display: 'flex'
+        },
+        children: [
+            {
+                kind: 'box', // 문제 번호
+                style: {
+                    fontSize: 30,
+                    width: 55
+                }
+            },
+            {
+                kind: 'box', // 문제 내용 텍스트
+                style: {
+                    width: '100%',
+                    fontSize: 20,
+                    marginTop: 5
+                }
+            }
+        ]
+    }, 
+    finalQuizExample : { //퀴즈응시 보기 리스트 박스
+        kind: 'box',
+        className: 'finalQuizExample',
+        style: {
+            fontSize: 18
+        },
+    },
+    finalExp: { // 보기문항 개별 요소
+        kind: 'box',
+        className: 'quizexamples'
+    },
+    finalQuizSubmit : { // 퀴즈응시 최종 결과제출 버튼 영역
+        kind : 'box',
+        style: {
+            textAlign: 'center'
+        },
+        children: [
+            {
+                kind : 'button',
+                className: 'quizbutton',
+                text : '제출하기'
             }
         ]
     },
@@ -297,7 +346,9 @@ const lesson = {
                 onClick: e => {
                     $(e.target).color('transparent');
                     $(e.target).addClass('checked');
-                    saveUserData(e.target);
+                    if(bookReady) {
+                        saveUserData(e.target);
+                    }
                 },
                 style: {
                     width: 'auto',
@@ -386,7 +437,7 @@ const lesson = {
             }
         ]
     },
-    quizResult: { //정답제출 결과
+    quizResult: { //퀴즈 팝업에서 정답확인 표시창
         kind: 'box',
         children: [
             {
