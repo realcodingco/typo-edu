@@ -14,13 +14,6 @@ toastr.options = {
     let groupId = new URLSearchParams(location.search).get('bid');
     const crsStart = new URLSearchParams(location.search).get('edustart');
 
-    // userReadCollection(`users`, (snapshop)=>{ 
-    //     const {docs} = snapshop;
-    //     for(const doc of docs) {
-    //         console.log(doc.id, doc.data());
-    //     }
-    // });
-
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
         // bid가 없으면 그룹 선택
         if(!groupId) {
@@ -335,17 +328,17 @@ toastr.options = {
                     if(curProgress == 100) {
                         $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     }
-                    else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){console.log('a')
+                    else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
-                    else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {console.log('b')
+                    else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
                         $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     } 
-                    else if(curProgress >= chapCompeleteProgress){console.log('c')
+                    else if(curProgress >= chapCompeleteProgress){
                         $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     }
-                    else {console.log('d')
+                    else {
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
                     
@@ -484,17 +477,17 @@ toastr.options = {
                     if(curProgress == 100) {
                         app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     }
-                    else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){console.log('a')
+                    else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
-                    else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {console.log('b')
+                    else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
                         app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     } 
-                    else if(curProgress >= chapCompeleteProgress){console.log('c')
+                    else if(curProgress >= chapCompeleteProgress){
                         app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     }
-                    else {console.log('d')
+                    else {
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
 
