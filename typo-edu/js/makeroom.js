@@ -1042,6 +1042,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         if(!isTakingClass(crsStart)) { // 수강기간이 아니면 기록되지 않도록
             return;
         }
+        
         userData.course[crs] = record;
         userUpdateDocument(`users/${mid}`, userData);
     }

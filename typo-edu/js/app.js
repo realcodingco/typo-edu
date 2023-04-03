@@ -367,8 +367,8 @@ toastr.options = {
         
         // 남은 수강일 표시   
         const diff = calcEndDate() - new Date();
-        const diffDay = Math.floor(diff / (1000*60*60*24));
-        $('.deadline')[0].innerText = `D - ${diffDay + 1}`
+        const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
+        $('.deadline')[0].innerText = `D ${diffDay < 0 ? '+' : '-'} ${Math.abs(diffDay)}`;
     }
     function calcProgress(fn) {
         const books = courseData[crs].books;
