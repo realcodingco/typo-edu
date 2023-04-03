@@ -15,7 +15,7 @@ toastr.options = {
     const crsStart = new URLSearchParams(location.search).get('edustart');
 
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
-        // bid가 없으면 그룹 선택
+        // bid가 없으면 '롯데 이지러닝'
         if(!groupId) {
             groupId = 'lotte';
         }
@@ -196,7 +196,6 @@ toastr.options = {
         }
         // 결과보기 버튼 클릭 이벤트 핸들러 : 퀴즈가 최종 제출된 경우 수료여부와 오답확인 팝업생성
         const showQuizResult = e => {
-            console.log('pop')
             const quizData = userData.course[crs].quiz
             const score = quizData.score;
             const pop = BX.component(main.quizResultPop).appendTo(homepage);
@@ -410,7 +409,7 @@ toastr.options = {
                 if(Object.keys(books).length-1 == o) {
                     const percent = totalProgress / books.length;
                     const total = parseFloat(percent.toFixed(2));
-                    curProgress = total; console.log(curProgress, 'curProgress');
+                    curProgress = total;
                     if(fn) fn(total);
                 }
             });
@@ -480,6 +479,7 @@ toastr.options = {
                             }
                         }
                     }
+                    console.log(curProgress, '--')
                     let chapCompeleteProgress = (((bookCount+1) / 24) * 100).toFixed(2);
                     if(curProgress == 100) {
                         app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
@@ -613,29 +613,29 @@ toastr.options = {
                     cpCourseCd : 'L018761',
                     userNm : '김하나',
                     userId: 'test',
-                    courseCd : 'E187611'
+                    courseCd : 'E187611',
+                    courseCsNo : '04'
                 },
                 {
                     cpCourseCd : 'L018762',
                     userNm : '김하나',
                     userId: 'test',
-                    courseCd : 'E187621'
+                    courseCd : 'E187621',
+                    courseCsNo : '04'
                 },
                 {
                     cpCourseCd : 'L018761',
                     userNm : '김철수',
                     userId: 'test1',
-                    courseCd : 'E187611'
-                },{
+                    courseCd : 'E187611',
+                    courseCsNo : '04'
+                },
+                {
                     cpCourseCd : 'L018761',
                     userNm : '이호',
                     userId: 'test2',
-                    courseCd : 'E187611'
-                },{
-                    cpCourseCd : 'L018761',
-                    userNm : '김하나',
-                    userId: 'test4',
-                    courseCd : 'E187611'
+                    courseCd : 'E187611',
+                    courseCsNo : '03'
                 }
             ];
             const target = testData.filter(o => o.userId == mid && o.cpCourseCd == crs);

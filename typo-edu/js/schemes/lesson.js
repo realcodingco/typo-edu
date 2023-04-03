@@ -81,6 +81,7 @@ const lesson = {
                         saveUserData(e.target);
                         playSound('choice');
                         e.target.disabled = true;
+                        $($(e.target).parent()[0]).removeClass('clickRequired');
                     }
                     else {
 

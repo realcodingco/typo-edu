@@ -80,7 +80,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                     } 
                     else { //진도 기록으로 
                         lessonBook(pageData).appendTo($('.lessonBook')[0]);
-                        checkStudied();
+                        setTimeout(checkStudied, 500)
                     }
                 })
                 .fail((xhr, status, error) => {})
@@ -651,27 +651,30 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             finalSubmit();
             return;
         }
-
-        const isSubmit = confirm('최종 제출하시겠습니까?');
-        if(isSubmit){
-            if(solve.length > 0) {
-                let unsolved = solve.filter(o => Object.keys(o).length == 0);
-                if(unsolved.length > 0) { // 풀었지만 다 안푼거
-                    toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
+        
+        setTimeout(()=>{
+            const isSubmit = confirm('최종 제출하시겠습니까?');
+            if(isSubmit){
+                if(solve.length > 0) {
+                    let unsolved = solve.filter(o => Object.keys(o).length == 0);
+                    if(unsolved.length > 0) { // 풀었지만 다 안푼거
+                        toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
+                        restart();
+                    }
+                    else { // 다 풀었네
+                        finalSubmit();
+                    }
+                } 
+                else { //  푼게 없잖아
+                    toastr.error('문제를 풀고, 다시 시도하세요.');
                     restart();
                 }
-                else { // 다 풀었네
-                    finalSubmit();
-                }
-            } 
-            else { //  푼게 없잖아
-                toastr.error('문제를 풀고, 다시 시도하세요.');
+            }
+            else {
                 restart();
             }
-        }
-        else {
-            restart();
-        }
+        }, 500);
+        
     }
 
     /**
@@ -1180,12 +1183,15 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             });
         }
         
+        let lastEl = [];
         if(studied) {
             const checks = $('input.read_check');
             checks.each(function(i, b) {
                 if(b.type == 'checkbox' && studied.includes(b.id)){
                     b.click();
                     b.disabled = true;
+                    $($(b).parent()[0]).removeClass('clickRequired');
+                    lastEl.push($(b).parent()[0]);
                 }   
             });
             const hidebox = $('.hideb');
@@ -1193,10 +1199,19 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 const hideTarget = $(b).children()[0];
                 if(studied.includes(hideTarget.id)) {
                     hideTarget.click();
+                    lastEl.push(hideTarget);
                 }
             });
         }
-        
+        if(lastEl.length > 0) { // 마지막 체크 요소 위치로 스크롤
+            const position = lastEl.map(o => {
+                return o.getBoundingClientRect().top;
+            });
+
+            const target = lastEl[position.indexOf(Math.max(...position))];
+            target.scrollIntoView({block: 'start'});
+        }
+
         bookReady = true;
     }
 
@@ -1207,17 +1222,19 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     function isReadAll() { //페이지의 체크박스를 모두 체크하였는지 확인
         const checks = $('input.read_check');
         let notReadCount = 0;
+        let notReaded = [];
         checks.each(function(i, b) {
             if(b.type == 'checkbox'){
                 if(!b.checked) { //미체크 항목
                     notReadCount++;
+                    notReaded.push(b.id);
                 }
                 else { //체크항목
                     
                 }
             } 
         });
-
+        
         const hidebox = $('.hideb');
         hidebox.each(function(i, b) {
             const hideTarget = $(b).children()[0];
@@ -1226,10 +1243,11 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             } 
             else {
                 notReadCount++;
+                notReaded.push(hideTarget.id);
             }
         });
 
-        return notReadCount == 0;
+        return notReaded; //notReadCount == 0;
     }
 
     /**
@@ -1245,7 +1263,16 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
      * 다음 버튼 클릭이벤트
      */
     function moveNextPage() {
-        if(!isReadAll()) {
+        const notReaded = isReadAll();
+        
+        if(notReaded.length != 0) {
+            const position = notReaded.map(o => {
+                const target = document.getElementById(o);
+                return target.getBoundingClientRect().top;
+            });
+            const firstEl = notReaded[position.indexOf(Math.min(...position))];
+            const target = document.getElementById(firstEl);
+            target.scrollIntoView({block:'start', behavior:'smooth'});
             toastr.error(`미확인 체크박스를 확인하고 다시 시도하세요.`);
             return;
         }
