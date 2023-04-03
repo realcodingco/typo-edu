@@ -17,6 +17,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     const quiz = params.get('q');
     const crsStart = params.get('edustart');
     let userData, record, emulator, editSection, pageData, timer;
+    let autoSubmit; // 자동제출 여부.
 
     if(location.pathname.includes('makeroom')) { // makeroom 페이지에서만 화면생성
         init();
@@ -135,11 +136,19 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             //남은 시간을 1초단위로 기록
             userData.course[crs].quiz.testTime = (minute * 60) + second;
             userUpdateDocument(`users/${mid}`, userData);
+            
+            // 학습종료일 자정이면 자동 제출
+            const today = new Date();
+            const deadline = new Date(today.getFullYear(), today.getMonth() + 1, 1).getTime();
+            if(Date.now() >= deadline) { 
+                autoSubmit = true;
+                minute = 0;
+                second = 0;
+            }   
 
             if(minute == 0 && second == 0) {
-                // 시간 종료. 최종 제출 처리
-                clearInterval(timer);
-                $('.quizTimer')[0].style.animationPlayState = 'paused';
+                // 시간 종료. 제출하기 버튼 자동 클릭.
+                document.querySelector('.quizbutton')[0].click(); 
             }
         }, 1000);
     }
@@ -533,6 +542,74 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         return result;
     }
 
+    function postExam() { // 기존 리얼코딩 시험제출 코드 수정 필요.
+        var crs_code = crs;
+        var chapter = getLocationParameter('chapter') || '';
+        var mid = getLocationParameter('member_id');
+
+        var postExam = function(){
+            var sdate = getLocationParameter('sdate') || '20190801';
+            var progress = '100';
+
+            var examResult = getQuizSolveData();
+            var score = examResult.correctCount / examResult.quizCount;
+            score = parseInt( score * 100 );
+
+            var passDesc = score >= 60 ? '02' : '03';
+
+            var url = "/cest/exam-lotte-prepost";//"/openapi/urlreq/http://ez.lotteacademy.co.kr/servlet/controller.cp.OutsideContentsServlet";
+            var param = {
+                RECORD_COUNT: "1",      // 처리건수 (인원)
+                COURSE_CODE: crs_code,  // "L015075"
+                COURSE_SQ: sdate,       // "20190801"
+                MEMBER_ID: mid,         // "realcoding"
+                PROGRESS_RESULT: progress,  // "70" 진도백분율환산
+                EXAM_RESULT: score,       // 시험백분율환산점수
+                TOTAL_RESULT: score,       // 시험 점수와 같은건가?
+                COMPLETION_YN: passDesc,    // 01: 진행중, 02: 수료, 03: 미수료 - 수료되지 못한 인원정보를 
+
+                TASK_RESULT: "0",       // 과제백분율환산점수 - 리얼코딩은 무관?
+                MID_EXAM_RESULT: "0",   // 형성평가 - 리얼코딩은 무관?
+                DISCUSS_RESULT: "0",    // 토론점수 - 리얼은 무관?
+            };
+
+            RC.showLoading('dots');
+            request(url, function(result){
+                
+                postExamLog(score, result, function(is){
+                    RC.hideLoading();
+                    if(fn) fn(true);
+                });
+                
+                // RC.stat('lecture', 'exam', 'lotte-'+ (crs_code || "nocourse") +'-'+ chapter + '-' + (mid || 'nouser'));
+            }, param, 'POST');
+        };
+
+        var postExamLog = function(score, lotteResult, fn){
+            request('/cest/exam-lotte-post', function(result){
+                result = JSON.parse(result);
+                if(fn) {
+                    fn(result.resultCode == 0, result);
+                }
+            }, {
+                crs_code: crs_code,
+                chapter: getLocationParameter('chapter') || '',
+                lid: getLectureId() || '',
+                mid: mid,
+                score: score,
+                vendorResponse: lotteResult
+            }, 'POST');
+        };
+
+        getLotteExamResult(function(isSuccess, score){
+            if(isSuccess && score >= 0) {
+                if(fn) fn(false, {error: '이미 시험을 응시했습니다.'});
+            }
+            else {
+                postExam();
+            }
+        });
+    }
     /**
      * 퀴즈 최종 제출하기 버튼 클릭 이벤트 핸들러
      * @param {*} e 
@@ -541,41 +618,59 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         // 한번 확인 - 타이머 멈추기
         clearInterval(timer);
         $('.quizTimer')[0].style.animationPlayState = 'paused';
+        let solve = userData.course[crs].quiz.solve? userData.course[crs].quiz.solve.detail : [];
 
-        const isSubmit = confirm('최종 제출하시겠습니까?');
-        if(isSubmit){
-            let solve = userData.course[crs].quiz.solve? userData.course[crs].quiz.solve.detail : [];
-            if(solve.length > 0) {
-                let unsolved = solve.filter(o => Object.keys(o).length == 0);
-                if(unsolved.length > 0) { // 풀었지만 다 안푼거
-                    toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
-                }
-                else { // 다 풀었네
-                    let correct = solve.filter(o => o.correct).length; // 맞은 개수
-                    let incorrect = solve.length - correct; // 틀린갯수
-                    let score = 5 * correct;
-                    userData.course[crs].quiz.score = score;
-                    userData.course[crs].quiz.solve.correctCount = correct;
-                    userData.course[crs].quiz.solve.incorrectCount = incorrect;
-                    userData.course[crs].quiz.solve.time = Date.now();
-                    userUpdateDocument(`users/${mid}`, userData);
-                    //update 데이터 , 버튼은 숨기고, 제출되었다 안내하고 모든 버튼 클릭 이벤트 없애고
-                    $(e.target).hide();
-                    toastr.success('최종 제출되었습니다.');
-                    $('.quizexamples').each(function(i, exp) {
-                        exp.onclick = 'disable';
-                    })
-                }
-            } 
-            else { // 푼게 없잖아
-
-            }
-        }
-        else {
+        const restart = () => {
             let testTime = userData.course[crs].quiz.testTime;
             let minute = Math.floor(testTime / 60);
             let second = testTime % 60;
             startTimer(minute, second);
+        };
+
+        const finalSubmit = () => {
+            let correct = solve.filter(o => o.correct).length; // 맞은 개수
+            let incorrect = solve.length - correct; // 틀린갯수
+            let score = 5 * correct;
+            userData.course[crs].quiz.score = score;
+            userData.course[crs].quiz.solve.correctCount = correct;
+            userData.course[crs].quiz.solve.incorrectCount = incorrect;
+            userData.course[crs].quiz.solve.time = Date.now();
+            userUpdateDocument(`users/${mid}`, userData);
+            //-- 
+            // postExam();
+            toastr.success('최종 제출되었습니다.');
+            //update 데이터 , 버튼은 숨기고, 제출되었다 안내하고 모든 버튼 클릭 이벤트 없애고
+            $(e.target).hide();
+            $('.quizexamples').each(function(i, exp) {
+                exp.onclick = 'disable';
+            });
+        };
+
+        // 응시기간이 경과해 자동제출하는 경우, 묻지 않고 
+        if(autoSubmit == true) {
+            finalSubmit();
+            return;
+        }
+
+        const isSubmit = confirm('최종 제출하시겠습니까?');
+        if(isSubmit){
+            if(solve.length > 0) {
+                let unsolved = solve.filter(o => Object.keys(o).length == 0);
+                if(unsolved.length > 0) { // 풀었지만 다 안푼거
+                    toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
+                    restart();
+                }
+                else { // 다 풀었네
+                    finalSubmit();
+                }
+            } 
+            else { //  푼게 없잖아
+                toastr.error('문제를 풀고, 다시 시도하세요.');
+                restart();
+            }
+        }
+        else {
+            restart();
         }
     }
 
@@ -813,6 +908,11 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         // editorUpdate();
     }
 
+    /**
+     * 퀴즈교재 페이지 데이터로 퀴즈 페이지 생성
+     * @param {*} pageData 
+     * @returns 
+     */
     function quizBook(pageData) {
         const b = box();
         const book = pageData;
@@ -1051,7 +1151,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
      * @returns 
      */
     function checkSolved(){
-        // console.log('checkSolved', userData.course[crs].quiz.solve)
         if(!userData.course[crs].quiz.solve) return;
 
         const solved = userData.course[crs].quiz.solve.detail;

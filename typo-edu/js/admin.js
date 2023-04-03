@@ -487,4 +487,48 @@
         .fail((xhr, status, error) => {});
     }
     
+    //결과전송을 위한.. 리얼코딩 기존코드.
+    var postLotteResultV2 = function(crs_code, sdate, mid, progress, score, fn){ // ('21. 8 추가 - 9.27 상용화예정 API 사용 결과전송)
+        RC.toast('v2로 전송합니다.');
+        if(vendor != 'lotte') {
+            RC.alert('롯데 전용 기능입니다.')
+            return;
+        }
+
+        var score = parseInt( score );
+        var passDesc = score >= 60 ? '02' : '03';
+
+        var url = "/cest/lotte-post-evaluate";
+        var param = {
+            year : sdate.left(4),
+            courseCd : courseCd,
+            courseCsNo : courseCsNo,
+            userId : mid,
+            progScore : progress,
+            finalTestScore : score,
+            completionCode : passDesc // 01: 진행중, 02: 수료, 03: 미수료
+        };
+        console.log(param, '결과전송 파라미터확인'); //상용화시점에 테스트 후, 주석해제할 것.
+        RC.showLoading('dots');
+        request(url, function(result){
+            postAfterStudy(crs_code, mid, result);
+        }, param, 'POST');
+
+        var postAfterStudy = function(crs_code, mid, response){
+            request('/cest/exam-lotte-afterstudy', function(result){
+                RC.hideLoading();
+
+                result = JSON.parse(result);
+                if(fn) {
+                    fn(result.resultCode == 0);
+                }
+            }, {
+                crs_code: crs_code,
+                mid: mid,
+                vendorResponse: response
+            }, 'POST');
+        };
+    };
+
+
 })();

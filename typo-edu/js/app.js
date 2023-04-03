@@ -23,8 +23,8 @@ toastr.options = {
         // userDeleteDocument('users/test', function(result){console.log(result);})
         getUserData(function(data) {
             let ymonth = crsStart.substring(0,6);
-            userData = data; // 그룹의 전체 데이터
-            // console.log(userData, 11)
+            userData = data; 
+            console.log(userData, 11)
             //입과 대상인지 확인
             getEnroll(groupId, function(result) { 
                 if(result) {
@@ -39,6 +39,7 @@ toastr.options = {
                         userData.course[crs] = {
                             edustart: crsStart,
                             courseCd: result.courseCd,
+                            courseCsNo : result.courseCsNo,
                             time: Date.now()
                         };
                     }
@@ -53,6 +54,7 @@ toastr.options = {
                             userData.course[crs] = {
                                 edustart: crsStart,
                                 courseCd: result.courseCd,
+                                courseCsNo : result.courseCsNo,
                                 time: Date.now()
                             };
                             delete userData.course[crs].quiz;
@@ -66,6 +68,7 @@ toastr.options = {
                         userData.course[crs] = {
                             edustart: crsStart,
                             courseCd: result.courseCd,
+                            courseCsNo : result.courseCsNo,
                             time: Date.now()
                         };
                     }
@@ -73,7 +76,7 @@ toastr.options = {
                     init();
                 }
                 else {
-                    toastr.error('등록된 수강생이 아닙니다.');
+                    toastr.error('잘못된 접근입니다.');
                 }
             });
         });
@@ -250,7 +253,8 @@ toastr.options = {
         }
 
         padBg.empty();
-        BX.component(myPage.header).appendTo(padBg);
+        const head = BX.component(myPage.header).appendTo(padBg);
+        head.find('h2')[0].innerHTML = `<font size=4>${userData.name} 님의</font> 학습 현황`;
         const bottom = BX.component(myPage.courseListBox).appendTo(padBg);
 
         const appendCourseList = function() {
@@ -368,7 +372,7 @@ toastr.options = {
         // 남은 수강일 표시   
         const diff = calcEndDate() - new Date();
         const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
-        $('.deadline')[0].innerText = `D ${diffDay < 0 ? '+' : '-'} ${Math.abs(diffDay)}`;
+        $('.deadline')[0].innerText = `D${diffDay < 0 ? '+' : '-'}${Math.abs(diffDay)}`;
     }
     function calcProgress(fn) {
         const books = courseData[crs].books;
@@ -406,7 +410,7 @@ toastr.options = {
                 if(Object.keys(books).length-1 == o) {
                     const percent = totalProgress / books.length;
                     const total = parseFloat(percent.toFixed(2));
-                    curProgress = total;
+                    curProgress = total; console.log(curProgress, 'curProgress');
                     if(fn) fn(total);
                 }
             });
@@ -592,6 +596,9 @@ toastr.options = {
     function getEnroll(groupId, fn) {
         if(groupId == 'lotte'){
             const crsEnd = YYYYMMDD(calcEndDate());
+
+            //courseCsNo 결과전송을 위한 데이터로 코스데이터에 같이 저장,
+
             // $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
             //     //data.enrollment - 배열  courseCd
             //     result = result.data.enrollment;
