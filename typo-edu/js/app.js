@@ -21,7 +21,7 @@ toastr.options = {
         }
 
         getUserData(mid, function(data) {
-            userData = data; console.log(userData, 11);
+            userData = data;
             //입과 대상인지 확인
             getEnroll(groupId, function(result) { 
                 if(result) {

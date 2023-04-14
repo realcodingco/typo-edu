@@ -36,7 +36,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             return;
         }
         getUserData(mid, function(data) {
-            userData = data; console.log(userData);
+            userData = data; 
             record = Object.keys(userData).length != 0 ? userData.course[crs] : null;
             if(!record) {
                 toastr.error('잘못된 접근입니다.');
@@ -125,7 +125,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         checkSolved();
                     } 
                     else { //진도 기록으로 
-                        lessonBook(pageData).appendTo($('.lessonBook')[0]);
+                        lessonBook(pageData, json.title).appendTo($('.lessonBook')[0]);
                         setTimeout(checkStudied, 500);
                     }
                 })
@@ -884,6 +884,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     function quizBook(pageData) {
         const b = box();
         const book = pageData;
+        document.title = 'Final Quiz';
         
         const drawPage = function(contents) {
             const wrap = box().appendTo(b);
@@ -936,12 +937,13 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     /**
      * pageData로 교재 생성
      * @param {object} pageData 배열
+     * @param {string} title - 교재제목
      * @returns 생성된 페이지 box
      */
-    function lessonBook(pageData) {
+    function lessonBook(pageData, title) {
         const b = box();
         const book = pageData;
-
+        document.title = title;
         const appendNav = function () {
             const navBg = $('.bookNav'); 
             for(let pages of book) {
@@ -1230,7 +1232,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             saveUserData(finishCheckBox, true); //update 없이 데이터 정리만
             userData.course[crs] = record;
 
-            calcProgress(crs, userData, function(result) { console.log(result, '<---');
+            calcProgress(crs, userData, function(result) { 
                 //result는 전체 progress(%), 중간 진도 전송
                 const progress = result; 
                 postProgress(crsStart.substring(0, 4), record.courseCd, record.courseCsNo, mid, progress, function(done){

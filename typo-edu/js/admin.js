@@ -262,7 +262,8 @@
             mid : data.mid,
             progress: data.progress,
             score: data.score
-        }; console.log(postData);
+        }; 
+        console.log(postData);
 
         if(parseInt(crsStart) < 20230501) { // 테스트 기간은 제외
             return;
