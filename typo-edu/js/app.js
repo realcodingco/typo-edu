@@ -14,6 +14,8 @@ toastr.options = {
     const crs = new URLSearchParams(location.search).get('p_cpsubj');
     let groupId = new URLSearchParams(location.search).get('bid');
     const crsStart = new URLSearchParams(location.search).get('edustart');
+    const diff = calcEndDate() - new Date();
+    const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
 
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
         if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
@@ -206,6 +208,11 @@ toastr.options = {
                     $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
                 }
             });
+
+            if(diffDay > 0 && diffDay < 4) { //종료일 3일 전 메시지 띄우기
+                toastr.info(`학습종료일이 얼마 남지 않았습니다.<br>
+                학습을 마무리하고 퀴즈에 응시하세요.`,'알림', {timeOut: 0, positionClass: 'toast-top-left',progressBar: false});
+            }
         });
     }
 
@@ -447,8 +454,6 @@ toastr.options = {
         appendCourseList();
         
         // 남은 수강일 D-day 표시   
-        const diff = calcEndDate() - new Date();
-        const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
         $('.deadline')[0].innerText = `D${diffDay < 0 ? '+' : '-'}${Math.abs(diffDay)}`;
     }
     /**
