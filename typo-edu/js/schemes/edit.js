@@ -520,7 +520,8 @@ const edit = {
                             padding: 5,
                             background: 'white',
                             color: 'black',
-                            height: '90%'
+                            height: '90%',
+                            overflow: 'auto'
                         }
                     }
                 ]
@@ -605,6 +606,11 @@ const edit = {
                         kind: 'option',
                         html: '체크박스',
                         value : 'check'
+                    },
+                    {
+                        kind: 'option',
+                        html: '학습완료 버튼',
+                        value : 'completeBtn'
                     },
                     {
                         kind: 'option',
@@ -1152,6 +1158,12 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
         children: [
             edit.progressId,
             edit.edit, edit.styleBtn,
+        ]
+    },
+    completeBtn: { // 학습완료 버튼 폼
+        kind: 'box',
+        children: [
+            edit.progressId,
         ]
     },
     sup : {  //위 첨자 컴포넌트 데이터 입력 폼

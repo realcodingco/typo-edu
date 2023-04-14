@@ -183,7 +183,7 @@ const myPage = {
                         kind: 'h2', //타이틀
                         text : '학습 현황',
                         style: {
-                            padding: '20px 0px 0px 20px',
+                            padding: '15px 0px 0px 20px',
                             width: 'auto',
                             display: 'inline-block'
                         }
@@ -194,7 +194,6 @@ const myPage = {
                             width: 50,
                             height: 50,
                             background:'white',
-                            // border: '1px solid lightgray',
                             borderRadius: 100,
                             float: 'right',
                             margin: 10,
@@ -211,6 +210,21 @@ const myPage = {
                                 }
                             }
                         ]
+                    },
+                    {
+                        kind: 'box',
+                        className: 'lecNotice',
+                        text: '',
+                        style : {
+                            position: 'absolute',
+                            left : 0,
+                            bottom: 1,
+                            fontSize: 9,
+                            paddingLeft: 10,
+                            fontFamily: "'GmarketSans', sans-serif",
+                            fontWeight: 400,
+                            color: '#006D4A'
+                        }
                     }
                 ]
             }
@@ -315,7 +329,7 @@ const myPage = {
                 kind:'box',
                 style: {
                     display:'flex',
-                    width: '90%',
+                    width: '100%',
                     margin: '0px auto',
                     gap: '5px'
                 },
@@ -325,8 +339,9 @@ const myPage = {
                         className: 'progressNumber',
                         text:'0%',
                         style: {
-                            width: 40,
-                            color: '#003887'
+                            width: 50,
+                            color: '#003887',
+                            textAlign: 'center'
                         }
                     },
                     {

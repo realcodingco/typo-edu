@@ -7,7 +7,8 @@ toastr.options = {
 };
 (function(){
     initDatabase();
-    let padBg, courseData, bookData, userData, homepage, curProgress;
+    let padBg, courseData, userData, homepage, curProgress;
+    let bookData = {};
     
     const mid = new URLSearchParams(location.search).get('p_userid');
     const crs = new URLSearchParams(location.search).get('p_cpsubj');
@@ -15,21 +16,17 @@ toastr.options = {
     const crsStart = new URLSearchParams(location.search).get('edustart');
 
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
-        // bid가 없으면 '롯데 이지러닝'
-        if(!groupId) {
+        if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
             groupId = 'lotte';
         }
 
-        // userDeleteDocument('users/test', function(result){console.log(result);})
-        getUserData(function(data) {
-            let ymonth = crsStart.substring(0,6);
-            userData = data; 
-            console.log(userData, 11)
+        getUserData(mid, function(data) {
+            userData = data; console.log(userData, 11);
             //입과 대상인지 확인
             getEnroll(groupId, function(result) { 
                 if(result) {
+                    const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
                     if(Object.keys(userData).length == 0) { //신규
-                        console.log('신규')
                         userData = {
                             groupId : groupId,
                             mid: mid,
@@ -43,28 +40,31 @@ toastr.options = {
                             time: Date.now()
                         };
                     }
-                    else if(userData.course[crs] && userData.course[crs].edustart == crsStart){ //계속 학습
-                        console.log('계속')
+                    else if(courseData && courseData.edustart == crsStart){ //계속 학습
+                        if(!courseData.courseCd || !courseData.courseCsNo) {
+                            userData.course[crs].courseCd = result.courseCd;
+                            userData.course[crs].courseCsNo = result.courseCsNo;
+                            updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+                        }   
                         init();
                         return;
                     }
-                    else if(userData.course[crs] && userData.course[crs].edustart != crsStart){ //재수강
+                    else if(courseData && courseData.edustart != crsStart){ //재수강 있을 수 없음
                         const retake = confirm('재수강입니다. 학습을 시작하기 위해 이전 학습 기록이 삭제됩니다.');
-                        if(retake){
-                            userData.course[crs] = {
+                        if(retake){ // 재수강 기록삭제시. 결과전송 데이터도 삭제? 
+                            userData.course[crs] = { //코스데이터 초기화
                                 edustart: crsStart,
                                 courseCd: result.courseCd,
                                 courseCsNo : result.courseCsNo,
                                 time: Date.now()
                             };
-                            delete userData.course[crs].quiz;
-                            userUpdateDocument(`users/${mid}`, userData);
+                            delete courseData.quiz;
+                            updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
                             init();
                         }
                         return;
                     }
-                    else { // 추가과정 수강
-                        console.log('추가')
+                    else { // 같은 기간에 2개 과정 추가 수강
                         userData.course[crs] = {
                             edustart: crsStart,
                             courseCd: result.courseCd,
@@ -72,70 +72,149 @@ toastr.options = {
                             time: Date.now()
                         };
                     }
-                    userMergeDocument(`users/${mid}`, userData);
-                    init();
+                    putUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function() {
+                        init();
+                    });
                 }
-                else {
+                else { //입과리스트에 없는
                     toastr.error('잘못된 접근입니다.');
                 }
             });
         });
     }
 
+    window.calcProgress = calcProgress;
+    window.getBook = getBook;
+    window.getJsonData = getJsonData;
+    window.updateUserData = updateUserData;
     window.getUserData = getUserData;
+    window.putUserData = putUserData;
+    window.courseData = courseData;
     window.mid = mid;
     window.crsStart = crsStart;
     window.crs = crs;
     window.isTakingClass = isTakingClass;
+    window.calcEndDate = calcEndDate;
+    window.getLotteEntrance = getLotteEntrance;
+    /**
+     * 학습기간별 데이터에서 학습자 데이터 가져오기
+     * @param {*} mid - 학습자 아이디
+     * @param {*} fn 
+     * @returns 
+     */
+    function getUserData(mid, fn) {
+        if(!mid) {
+            if(fn) fn(null);
+            return;
+        }
 
+        const read = (callback) => {
+            BX.db.firestore().collection('lecture').doc(groupId)
+                             .collection('monthly').doc(crsStart.substring(0, 6))
+                             .collection('members').doc(mid)
+                             .get()
+                             .then(callback)
+                             .catch(callback);
+        };
+        
+        read(function(doc) {
+            if(fn && doc.exists) fn(doc.data());
+            else fn({});
+        });
+    }
+    /**
+     * 학습자 데이터 저장
+     * @param {*} data - groupId, crsStart, mid, data 값을 필수로 가지는 json
+     * @param {*} fn 
+     */
+    function putUserData(data, fn) {
+        const write = (callback) => {
+            BX.db.firestore().collection('lecture').doc(data.groupId)
+                             .collection('monthly').doc(data.crsStart.substring(0, 6))
+                             .collection('members').doc(data.mid)
+                             .set(data.data)
+                             .then(callback)
+                             .catch(callback);
+        };
+        write(function(result) {
+            if(fn) fn(result);
+        });
+    }
+    /**
+     * 학습자 데이터 업데이트
+     * @param {*} data - groupId, crsStart, mid, data 값을 필수로 가지는 json
+     * @param {*} fn 
+     */
+    function updateUserData(data, fn) {
+        const update = (callback) => {
+            BX.db.firestore().collection('lecture').doc(data.groupId)
+                             .collection('monthly').doc(data.crsStart.substring(0, 6))
+                             .collection('members').doc(data.mid)
+                             .update(data.data)
+                             .then(callback)
+                             .catch(callback);
+        }
+        update(function(result) {
+            if(fn) fn(result);
+        });
+    }
     /**
      * 페이지 초기화
      */
     function init() {
         getJsonData("./lecture/course.json", json => {
             courseData = json;
-            // console.log(courseData, 'courseData');
-            homepage = BX.component(main.bg).appendTo(topBox);
-            const bg = BX.component(main.pad).appendTo(homepage);
-            padBg = $('.padBg');
-            const bottomBar = bg[0].lastChild;
-            const menu = [
-                { 
-                    text : 'home',
-                    fn : openCourse
-                },
-                { 
-                    text : 'apps',
-                    fn : openStepList //openAppStore
-                },
-                { 
-                    text : 'school',
-                    fn : getMyCourse
+            calcProgress(crs, userData, function(result){
+                curProgress = result;
+                homepage = BX.component(main.bg).appendTo(topBox);
+                const bg = BX.component(main.pad).appendTo(homepage);
+                padBg = $('.padBg');
+                const bottomBar = bg[0].lastChild;
+                const menu = [
+                    { 
+                        text : 'home',
+                        fn : openCourse
+                    },
+                    { 
+                        text : 'apps',
+                        fn : openStepList 
+                    },
+                    { 
+                        text : 'school',
+                        fn : getMyCourse
+                    }
+                ];
+                for(let i in menu) {
+                    const one = BX.component(main.menuBtn).appendTo(bottomBar).click(menu[i].fn);
+                    one[0].firstChild.innerText = menu[i].text;
+                    one[0].firstChild.onclick = e => {
+                        $('.padBtn').each((i, item)  => {
+                            $(item).removeClass('clicked');
+                        });
+                    
+                        $(e.target).parent().addClass('clicked');
+                    }
                 }
-            ];
-            for(let i in menu) {
-                const one = BX.component(main.menuBtn).appendTo(bottomBar).click(menu[i].fn);
-                one[0].firstChild.innerText = menu[i].text;
-                one[0].firstChild.onclick = e => {
-                    $('.padBtn').each((i, item)  => {
-                        $(item).removeClass('clicked');
-                    });
                 
-                    $(e.target).parent().addClass('clicked');
+                if(location.hash == '#list') {
+                    calcProgress(crs, userData, (result) => {
+                        curProgress = result;
+                        openStepList();
+                    });
+                } 
+                else {
+                    $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
                 }
-            }
-            
-            if(location.hash == '#list') {
-                calcProgress(() => {
-                    openStepList();
-                });
-            } 
-            else {
-                $('.padBtn').find('span')[0].click(); // 홈버튼 클릭
-            }
+            });
         });
     }
 
+    /**
+     * 교재 생성 데이터 가져오기
+     * @param {*} cid - 코스id
+     * @param {*} bid - book id
+     * @param {*} fn 
+     */
     function getBook(cid, bid, fn) {
         $.ajax({url: `./lecture/${cid}/${bid}/${bid}.json`, dataType: "json"})
         .done((json) => {
@@ -143,7 +222,11 @@ toastr.options = {
         })
         .fail((xhr, status, error) => {})
     }
-
+    /**
+     * josn 파일 읽기
+     * @param {*} src 
+     * @param {*} fn 
+     */
     function getJsonData(src, fn) {
         $.ajax({url: src, dataType: "json"})
         .done((json) => {
@@ -161,14 +244,15 @@ toastr.options = {
         
         const course  = courseData[crs];
         const courseTitle = course.title; 
-        document.title = courseTitle;//꿀잼실습 모던 자바스크립트
+        userData.course[crs].title = courseTitle;
+        document.title = courseTitle;
         const iconbox = BX.component(main.courseIcon).appendTo(padBg[0]);
         iconbox.children()[0].innerHTML = `반갑습니다. <b>${userData.name}</b> 학습자님.`;
         iconbox.children()[2].innerText = course.completed;
 
         const quizRecord = userData.course[crs].quiz || {};
         const quizButton = iconbox.find('.finalQuizBtn')[0];
-
+        
         // Final Quiz 버튼 클릭 이벤트 핸들러 : 퀴즈 응시페이지 열기
         const enterQuiz = e => {
             const shuffle = (array) => {
@@ -176,7 +260,7 @@ toastr.options = {
             }
             const openQuizPage = (qid, type) => {
                 window.location.hash = '';
-                window.location.href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&book=${qid}&q=${type}&page=`;
+                window.location.href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&book=${qid}&q=${type}&page=`;
             }
 
             if(Object.keys(quizRecord).length == 0) { // 퀴즈 응시조건 체크
@@ -184,7 +268,7 @@ toastr.options = {
                 shuffle(numbers);
                 quizRecord.type = numbers[0];
                 userData.course[crs].quiz = quizRecord;
-                userUpdateDocument(`users/${mid}`, userData, function() {
+                updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function() {
                     let qid = course.quiz[quizRecord.type];
                     openQuizPage(qid, quizRecord.type);
                 });
@@ -207,35 +291,30 @@ toastr.options = {
             getSolve(target, quizData);
         }
 
-        calcProgress(function(result){
-            if(quizRecord.score) { //최종 제출된 상태
-                quizButton.innerText = '결과 보기';
-                quizButton.onclick = showQuizResult;
-                if(quizRecord.score >= 60) { // 수료조건 60점 이상 default 처리
-                        
-                }
-            } 
-            else if(!isTakingClass(crsStart)) { // 수강 기간이 아니면 버튼 없애기
+        if(quizRecord.score) { //최종 제출된 상태
+            quizButton.innerText = '결과 보기';
+            quizButton.onclick = showQuizResult;
+        } 
+        else if(!isTakingClass(crsStart)) { // 수강 기간이 아니면 버튼 접근제한
+            quizButton.onclick = e => {
+                toastr.error('수강기간이 아니므로 응시할 수 없습니다.');
+            }
+        }
+        else { //진도 80% 이상일때만 입장
+            if(curProgress >= 80) {
+                quizButton.onclick = enterQuiz;
+            }
+            else {
                 quizButton.onclick = e => {
-                    toastr.error('수강기간이 아니므로 응시할 수 없습니다.');
+                    toastr.error('학습진도율 80% 미만입니다.');
                 }
             }
-            else { //진도 확인 필요
-                if(result >= 80) {
-                    quizButton.onclick = enterQuiz;
-                }
-                else {
-                    quizButton.onclick = e => {
-                        toastr.error('학습진도율 80% 미만입니다.');
-                    }
-                }
-            }
-        });
+        }
     }
     /**
-     * 현재 시점이 수강기간에 포함되는지 체크
-     * @param {*} yyyymmdd 
-     * @returns 
+     * 현재 시점이 수강기간에 해당하는지 체크
+     * @param {string} yyyymmdd - edustart
+     * @returns - true or false
      */
     function isTakingClass(yyyymmdd) {
         const today = new Date();
@@ -254,8 +333,10 @@ toastr.options = {
         padBg.empty();
         const head = BX.component(myPage.header).appendTo(padBg);
         head.find('h2')[0].innerHTML = `<font size=4>${userData.name} 님의</font> 학습 현황`;
+        if(groupId == 'lotte') {
+            $('.lecNotice')[0].innerText = '학습기간 종료 후 1~5일 내에 롯데 이지러닝 진도연동이 이뤄집니다.';
+        }
         const bottom = BX.component(myPage.courseListBox).appendTo(padBg);
-
         const appendCourseList = function() {
             const cid = crs;
             const coursebox = BX.component(myPage.courseBox).appendTo(bottom);
@@ -269,13 +350,9 @@ toastr.options = {
             let totalProgress = 0;
             const appendLine = () => {
                 let book = bookList.shift();
-                
-                bookData = {};
                 const line = BX.component(myPage.stepBox).appendTo(stepList);
-                getBook(cid, book.id, json => {
+                const createLine = (json) => {
                     const bid = json.id;
-                    bookData[bid] = json; 
-                    
                     let lastPage = null; // 마지막 학습위치 찾기
                     let progress = 0;
                     if(userData) {
@@ -333,17 +410,17 @@ toastr.options = {
                     let chapCompeleteProgress = (((bookCount + 1) / 24) * 100).toFixed(2);
 
                     if(curProgress == 100) {
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     }
                     else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
                     else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     } 
                     else if(curProgress >= chapCompeleteProgress){
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     }
                     else {
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
@@ -360,59 +437,78 @@ toastr.options = {
                     if(bookList.length != 0) {
                         bookCount++;
                         appendLine();
-                    } 
-                });  
+                    }
+                }
+                createLine(bookData[book.id]);
             }
             appendLine();
         }
     
         appendCourseList();
         
-        // 남은 수강일 표시   
+        // 남은 수강일 D-day 표시   
         const diff = calcEndDate() - new Date();
         const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
         $('.deadline')[0].innerText = `D${diffDay < 0 ? '+' : '-'}${Math.abs(diffDay)}`;
     }
-    function calcProgress(fn) {
-        const books = courseData[crs].books;
+    /**
+     * 전체 학습진도율 계산
+     * @param {*} crs - 과정코드
+     * @param {*} books - 교재 데이터
+     * @param {*} userData - 학습자 데이터
+     * @param {*} fn 
+     */
+    function calcProgress(crs, userData, fn) {
+        const books = courseData ? courseData[crs].books : window.courseData[crs].books;
         let totalProgress = 0;
-        Object.keys(books).forEach(function(o){
-            bookData = {};
-            getBook(crs, books[o].id, json => {
-                const bid = json.id;
-                bookData[bid] = json; 
-                let progress = 0;
-                const pageData = bookData[bid].pages; // 배열
-                let totalRequired = 0;
-                let studied = 0;
-                for(var i=0; i<pageData.length; i++) {
-                    let pid = Object.keys(pageData[i])[0];
-                    totalRequired += getContentsId(bid, pid).length;
+        let count = 0;
+        //교재별 진도 계산
+        const calc = (json, o) => { 
+            count++;
+            const bid = json.id;
+            bookData[bid] = json; 
+            let progress = 0;
+            const pageData = bookData[bid].pages; // 배열 - 교재별 페이지 데이터
+            let totalRequired = 0;
+            let studied = 0;
+            
+            for(var i=0; i<pageData.length; i++) {
+                let pid = Object.keys(pageData[i])[0];
+                totalRequired += getContentsId(bid, pid).length;
 
-                    const userBookData = userData && userData.course[crs] && userData.course[crs].progress ? userData.course[crs].progress[bid] : null;
-                    const studyData = userBookData && userBookData[pid] ? 
-                        userBookData[pid].clicked : [];
-                    
-                    if(studyData){
-                        studied += studyData.length;
-                    }                    
-                }
+                const userBookData = userData && userData.course[crs] && userData.course[crs].progress ? userData.course[crs].progress[bid] : null;
+                const studyData = userBookData && userBookData[pid] ? 
+                    userBookData[pid].clicked : [];
                 
-                progress = (studied / totalRequired) * 100;
-                if(isNaN(progress)) {
-                    progress = 0;
-                } else if(progress > 0) {
-                    progress = progress.toFixed(1);
-                }  
-
-                totalProgress += Number(progress);
-                if(Object.keys(books).length-1 == o) {
-                    const percent = totalProgress / books.length;
-                    const total = parseFloat(percent.toFixed(2));
-                    curProgress = total;
-                    if(fn) fn(total);
-                }
-            });
+                if(studyData){
+                    studied += studyData.length;
+                }                    
+            }
+            
+            progress = (studied / totalRequired) * 100;
+            if(isNaN(progress)) {
+                progress = 0;
+            } else if(progress > 0) {
+                progress = progress.toFixed(1);
+            }  
+            
+            totalProgress += Number(progress);
+            if(Object.keys(books).length == count) { 
+                const percent = totalProgress / books.length;
+                const total = parseFloat(percent.toFixed(2));
+                if(fn) fn(total); //전체 진도율 전달
+            }
+        }
+        Object.keys(books).forEach(function(o){
+            const targetId = books[o].id;
+            if(!Object.keys(bookData).includes(targetId)){
+                getBook(crs, targetId, json => {
+                    calc(json, o);
+                });
+            }
+            else {
+                calc(bookData[targetId], o);
+            }
         });
     }
 
@@ -449,15 +545,14 @@ toastr.options = {
         const courseTitle = courseData[courseId].title;
         BX.component(main.stepListTitle).appendTo(padBg).text(courseTitle + ` (${stepList.length} steps)`);
         const listBg = BX.component(main.stepStore).appendTo(padBg);
-        bookData = {}; //교재데이터 담기 위해 초기화
     
         let lastCompeleteChapter; // 학습진도가 100%인 최종챕터
-        let bookCount = 0;
+        let bookCount = 0; 
         let appendIcon = () => {
             let book = stepList.shift();
             const bid = book.id;
-            getBook(courseId, bid, json => {
-                bookData[bid] = json; //초기 1회 교재의 모든 교재 데이터 생성
+            const createIcon = (json) => {
+                bookData[bid] = json; 
                 const icon = json.icon;
                 const app = BX.component(main.stepBook).appendTo(listBg).background(`url(./lecture/icons/${icon})`);
                 if(!mid) {
@@ -479,20 +574,20 @@ toastr.options = {
                             }
                         }
                     }
-                    console.log(curProgress, '--')
+                    
                     let chapCompeleteProgress = (((bookCount+1) / 24) * 100).toFixed(2);
                     if(curProgress == 100) {
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     }
                     else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
                     else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     } 
                     else if(curProgress >= chapCompeleteProgress){
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     }
                     else {
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
@@ -503,28 +598,22 @@ toastr.options = {
                     }
                 }
                 app.find('a')[0].innerText = json.title;
-                if(stepList.length != 0) {
+                if(stepList.length != 0) { // 남은 교재가 없을 때까지
                     bookCount++;
                     appendIcon();
-                } else {
-                    // console.log(courseData) 
-                }
-            });
+                } 
+            }
+
+            if(!Object.keys(bookData).includes(bid)){
+                getBook(courseId, bid, json => {
+                    createIcon(json);
+                });
+            }
+            else {
+                createIcon(bookData[bid]);
+            }
         }
         appendIcon();
-    }
-
-    function getUserData(fn) {
-        if(!mid) {
-            if(fn) fn(null);
-            return;
-        }
-
-        userReadDocument(`users/${mid}`, (doc)=>{ 
-            let data = doc.data();
-            if(fn && data) fn(data);
-            else fn({});
-        });
     }
 
     /**
@@ -539,7 +628,7 @@ toastr.options = {
         const content = targetPage[pageid].content;
         
         let idList = content.filter(o => o.id);
-        idList = idList.map( o => o.id);
+        idList = idList.map(o => o.id);
         
         return idList;
     }
@@ -578,6 +667,11 @@ toastr.options = {
         return point == undefined;
     }
 
+    /**
+     * 날짜 데이터를 YYYYMMDD 형태로 출력
+     * @param {*} date 
+     * @returns 
+     */
     function YYYYMMDD(date) {
         const pad = (number, length) => {
             var str = '' + number;
@@ -593,59 +687,64 @@ toastr.options = {
         return yyyy + mm + dd;
     };
 
+    /**
+     * 수강기간별 입과리스트에서 일치하는 학습자 데이터 전달
+     * @param {*} groupId 
+     * @param {*} fn 
+     */
     function getEnroll(groupId, fn) {
-        if(groupId == 'lotte'){
-            const crsEnd = YYYYMMDD(calcEndDate());
-
-            //courseCsNo 결과전송을 위한 데이터로 코스데이터에 같이 저장,
-
-            // $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
-            //     //data.enrollment - 배열  courseCd
-            //     result = result.data.enrollment;
-            //     // for(let user of result) {
-            //     //     // if(user.courseCd == crs)
-            //     // }
-            //     console.log(result);
-            // });
-
-            const testData = [
-                {
-                    cpCourseCd : 'L018761',
-                    userNm : '김하나',
-                    userId: 'test',
-                    courseCd : 'E187611',
-                    courseCsNo : '04'
-                },
-                {
-                    cpCourseCd : 'L018762',
-                    userNm : '김하나',
-                    userId: 'test',
-                    courseCd : 'E187621',
-                    courseCsNo : '04'
-                },
-                {
-                    cpCourseCd : 'L018761',
-                    userNm : '김철수',
-                    userId: 'test1',
-                    courseCd : 'E187611',
-                    courseCsNo : '04'
-                },
-                {
-                    cpCourseCd : 'L018761',
-                    userNm : '이호',
-                    userId: 'test2',
-                    courseCd : 'E187611',
-                    courseCsNo : '03'
+        if(groupId == 'lotte'){ 
+            if(crsStart == '20230401') { //입과일 4월은 테스트 진행
+                const testData = [
+                    {
+                        cpCourseCd : 'L018761',
+                        userNm : '김하나',
+                        userId: 'test',
+                        courseCd : 'E187611',
+                        courseCsNo : '04'
+                    },
+                    {
+                        cpCourseCd : 'L018761',
+                        userNm : '이호',
+                        userId: 'test2',
+                        courseCd : 'E187611',
+                        courseCsNo : '03'
+                    }
+                ];
+                const target = testData.filter(o => o.userId == mid && o.cpCourseCd == crs);
+                if(target.length == 1) {
+                    fn(target[0]);
+                } else {
+                    fn(null);
                 }
-            ];
-            const target = testData.filter(o => o.userId == mid && o.cpCourseCd == crs);
-            if(target.length == 1) {
-                fn(target[0]);
-            } else {
-                fn(null);
+            }
+            else {
+                const crsEnd = YYYYMMDD(calcEndDate());
+                getLotteEntrance(crsStart, crsEnd, function(result) {
+                    const target = result.filter(o => o.userId == mid && o.cpCourseCd == crs);
+                    if(target.length == 1) {
+                        fn(target[0]);
+                    } 
+                    else {
+                        fn(null);
+                    }
+                });
             }
         }
-        
+    }
+
+    /**
+     * 롯데이지러닝 입과일 기준 입과리스트 가져오기
+     * @param {*} crsStart - yyyymmdd
+     * @param {*} crsEnd - null이면 crsStart기준 말일로 자동 설정
+     * @param {*} fn 
+     */
+    function getLotteEntrance(crsStart, crsEnd, fn) {
+        if(!crsEnd) crsEnd = YYYYMMDD(calcEndDate());
+        $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
+            result = result.data.enrollment;
+            fn(result);
+        });
     }
 
     /**

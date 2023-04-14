@@ -23,6 +23,20 @@
     margin-top: 300px;
     border-top: 2px solid #0076BA;
 }
+.scaleBtn {
+    width:30px;
+    height: 30px;
+    margin:3px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    text-align: center;
+    cursor: pointer;
+    user-select: none; 
+    /* color:lightgray; */
+}
+.scaleBtn:hover {
+    background: white;
+}
 .emulator {
     width: auto;
     display: none;
@@ -360,9 +374,6 @@ pattern {
 .bookNav {
     width: 90%;
     height: 50px;
-    /* position: absolute;
-    top: 0px;
-    left : 0px; */
     text-align: center;
     display: flex;
     justify-content: space-around;
@@ -371,7 +382,6 @@ pattern {
     width: 24px;
     height: 24px;
     color: gray;
-    /* #e8af06; */
     background: lightgray;
     font-size :14px;
     text-align:center;
@@ -379,19 +389,16 @@ pattern {
     border-radius: 40px;
     border: 1px solid gray;
     margin: 8px;
-    /* padding-top: 2px; */
-    cursor: pointer;
 }
 .bookNav > div:hover {
     opacity: 1;
-    /* left: 80px; */
 }
 .navLabel {
     width: max-content;
     font-size: 12px;
     position: absolute;
     top: 25px;
-    left : -50%; /*25px;*/
+    left : -50%;
     margin-left: 10px;
     color: #444;
     display: none;
@@ -529,19 +536,6 @@ pattern {
 .tableHVH tbody td:hover{
     background-color: rgba(244, 13, 59, 0.2);
 }
-/* .tableHVH tbody td:hover::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0px;
-    bottom: -9999px;
-    background-color: rgba(244, 13, 59, 0.3);
-    z-index: -2;
-} */
-/* .tableHVH tbody tr:hover {
-    background-color: rgba(255,255,255,0.2);
-} */
 
 .tableHVH tbody td {
     position: relative;

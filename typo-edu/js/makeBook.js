@@ -351,7 +351,7 @@ function colletData(target) { // 추가버튼을 기준으로
             const textareas = $(el).find('textarea');
             let examples = [];
             for(let example of textareas) {
-                if(example.valuequizExample && example.name != 'question') examples.push(example.value);
+                if(example.value && example.name != 'question') examples.push(example.value);
             }
             quizdata.example = examples;
             quiz.push(quizdata);

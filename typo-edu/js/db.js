@@ -45,6 +45,7 @@ function userMergeDocument(path, data, callback) {
         .then(callback)
         .catch(callback);
 }
+
 function userUpdateDocument(path, data, callback) {
     BX.db.firestore().doc(path).update(data)
         .then(callback)

@@ -144,8 +144,39 @@ const admin = {
                     fontSize: 10,
                     marginLeft: 12
                 }
+            },
+            {
+                kind: 'box',
+                style: {
+                    float: 'right',
+                    width: 'auto',
+                    display: 'flex'
+                },
+                children: [
+                    {
+                        kind: 'box',
+                        text: '수업중',
+                        className: 'studyStatus',
+                    },
+                    {
+                        kind : 'button',
+                        className: 'postResultBtn',
+                        text: '결과전송',
+                    }
+                ]
             }
         ]
+    },
+    excelfileBtn: {
+        kind: 'button',
+        className: 'excelfileBtn',
+        text: 'Excel',
+        style: {
+            position: 'absolute',
+            right: 10,
+            top: 10,
+            display: 'none'
+        }
     },
     progInfoBox : {
         kind:'box', //진도

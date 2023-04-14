@@ -62,10 +62,6 @@ const lesson = {
                 return;
             }
             $(e.target).find('input')[0].click();
-            if(location.pathname.includes('makeBook')) return;
-            if($(e.target).find('input').prop('checked') && bookReady){ 
-                playSound('choice');
-            }
         },
         children : [
             { 
@@ -77,15 +73,13 @@ const lesson = {
                 type : 'checkbox',
                 onClick: (e) => {
                     if(location.pathname.includes('makeBook')) return;
+                    
                     if ( bookReady && $(e.target).prop('checked') ) {
                         saveUserData(e.target);
                         playSound('choice');
                         e.target.disabled = true;
                         $($(e.target).parent()[0]).removeClass('clickRequired');
                     }
-                    else {
-
-                    } 
                 },
                 style : {
                     zoom : 1.8,
@@ -313,6 +307,40 @@ const lesson = {
             }
         ]
     },
+    completeBtn : { //챕터학습완료 문구, 체크박스
+        kind: 'box',
+        className: 'clickRequired',
+        onClick: e => {
+            if(e.target.tagName == 'INPUT') {
+                return;
+            }
+            else if(e.target.tagName != 'DIV') {
+                $(e.target).parent().click();
+                return;
+            }
+            $(e.target).find('input')[0].click();
+            // if(location.pathname.includes('makeBook')) return;
+        },
+        children : [
+            { 
+                kind : 'text',
+                text : '교재 학습이 완료되었습니다.',
+                style: {
+                    fontSize: 20,
+                    color: 'gray'
+                }
+            },
+            {
+                kind : 'input',
+                className: 'complete_check read_check',
+                type : 'checkbox',
+                style : {
+                    zoom : 1.8,
+                    marginLeft: 5
+                }
+            }
+        ]
+    },
     nextBtn : {
         kind: 'box',
         style: {
@@ -406,6 +434,36 @@ const lesson = {
                     height: '100%',
                     padding: 10
                 }
+            },
+            {
+                kind: 'box',
+                style: {
+                    position: 'absolute',
+                    top: $('.bookEditor').top() + 30,
+                    right: 5,
+                    width: 75,
+                    fontSize: 22
+                },
+                children: [
+                    {
+                        kind: 'box',
+                        className: 'scaleBtn',
+                        text: '+',
+                        onClick : e => {
+                            const curSize = $(e.target).parent().prev()[0].aceEditor.getFontSize();
+                            $(e.target).parent().prev()[0].aceEditor.setFontSize(curSize+1);
+                        }
+                    },
+                    {
+                        kind: 'box',
+                        text: '-',
+                        className: 'scaleBtn',
+                        onClick : e => {
+                            const curSize = $(e.target).parent().prev()[0].aceEditor.getFontSize();
+                            $(e.target).parent().prev()[0].aceEditor.setFontSize(curSize-1);
+                        }
+                    }
+                ]
             }
         ]
     },
@@ -432,8 +490,8 @@ const lesson = {
                 style : {
                     width: 'calc(100% - 70px)',
                     textAlign: 'left',
-                    fontSize: 30,
-                    color:'white'
+                    color:'white',
+                    wordBreak: 'keep-all'
                 }
             }
         ]
@@ -500,7 +558,7 @@ const lesson = {
                         style: {
                             width: '100%',
                             height: '100%',
-                            padding: 20,
+                            padding: '20px 20px 80px 20px',
                             textAlign: 'center',
                             fontFamily: 'IBM Plex Mono',
                             overflow: 'auto'
@@ -525,18 +583,19 @@ const lesson = {
                                     padding: 20,
                                     color: 'white',
                                     fontSize: 35,
-                                    textAlign: 'left'
+                                    textAlign: 'left',
+                                    wordBreak: 'keep-all'
                                 }
                             },
                             {
                                 kind: 'box', //객관식 보기문항
                                 className: 'quizExamples',
                                 style: {
-                                    width: '80%',
+                                    width: '90%',
                                     padding: 20,
                                     color: 'white',
-                                    fontSize: 30,
-                                    textAlign: 'left'
+                                    fontSize: 28,
+                                    textAlign: 'left',
                                 },
                             },
                             {

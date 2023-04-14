@@ -121,10 +121,24 @@ const learn = {
                         style: {
                             width: 'auto',
                             height: 'auto',
-                            color: 'white',//'#61D836',
-                            // background: 'white',
+                            color: 'white',
                             fontSize: 25,
                             marginTop: 5
+                        }
+                    },
+                    { //
+                        kind: 'box',
+                        className:'typingCount',
+                        style: {
+                            width:'auto',
+                            marginLeft: 13,
+                            marginTop: 8,
+                            fontSize: 11,
+                            color: '#FFF899',
+                            padding: '2px 10px',
+                            borderRadius: 8,
+                            fontFamily: "'GmarketSans', sans-serif",
+                            fontWeight: 100
                         }
                     },
                     {
@@ -147,7 +161,6 @@ const learn = {
                             //             text: '공유'
                             //         }
                             //     ]
-                                
                             // },
                             {
                                 kind: 'box',
@@ -191,43 +204,73 @@ const learn = {
                     fontFamily : 'IBM Plex Mono',//'PT mono',
                     fontsize: 20,
                     cursorStyle: 'smooth',
-                    maxLines: Infinity
-                },
+                    maxLines: Infinity,
+                }
             },
             {
-                kind: 'box', //가이드 카드
+                kind: 'box',
                 style: {
-                    display: 'none'
+                    position: 'absolute',
+                    top: $('.aceEditor').top() + 30,
+                    right: 5,
+                    width: 75,
+                    fontSize: 22
                 },
                 children: [
                     {
-                        kind:'box',
-                        style: {
-                            width: 20,
-                            height: 18,
-                            // background: 'white',
-                            marginLeft: 35,
-                            borderLeft : '12px solid transparent',
-                            borderBottom: '18px solid white',
-                            borderRight : '12px solid transparent',
+                        kind: 'box',
+                        className: 'scaleBtn',
+                        text: '+',
+                        onClick : e => {
+                            const curSize = $('.aceEditor')[0].aceEditor.getFontSize();
+                            $('.aceEditor')[0].aceEditor.setFontSize(curSize+1);
                         }
                     },
                     {
-                        kind:'box',
-                        className: 'codingCard',
-                        style: {
-                            background: 'white',
-                            width: 'calc(100% - 20px)',
-                            borderRadius: 10,
-                            height : 'auto',
-                            margin: '-6px 10px 0px 10px',
-                            padding: 10,
-                            textAlign: 'center',
-                        },
+                        kind: 'box',
+                        text: '-',
+                        className: 'scaleBtn',
+                        onClick : e => {
+                            const curSize = $('.aceEditor')[0].aceEditor.getFontSize();
+                            $('.aceEditor')[0].aceEditor.setFontSize(curSize-1);
+                        }
                     }
-
                 ]
             }
+            // {
+            //     kind: 'box', //가이드 카드
+            //     style: {
+            //         display: 'none'
+            //     },
+            //     children: [
+            //         {
+            //             kind:'box',
+            //             style: {
+            //                 width: 20,
+            //                 height: 18,
+            //                 // background: 'white',
+            //                 marginLeft: 35,
+            //                 borderLeft : '12px solid transparent',
+            //                 borderBottom: '18px solid white',
+            //                 borderRight : '12px solid transparent',
+            //             }
+            //         },
+            //         {
+            //             kind:'box',
+            //             className: 'codingCard',
+            //             style: {
+            //                 background: 'white',
+            //                 width: 'calc(100% - 20px)',
+            //                 borderRadius: 10,
+            //                 height : 'auto',
+            //                 margin: '-6px 10px 0px 10px',
+            //                 padding: 10,
+            //                 textAlign: 'center',
+            //             },
+            //         }
+
+            //     ]
+            // }
         ]
     },
     quizGuide: {
@@ -358,9 +401,6 @@ const learn = {
                                 kind: 'span',
                                 className: 'material-symbols-outlined listbtn',
                                 text : 'apps',
-                                onClick: e => {
-                                    location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#`;
-                                },
                                 children: [
                                     {
                                         kind: 'span',
@@ -417,7 +457,7 @@ const learn = {
                     position: 'absolute',
                     top: 10,
                     right: 10,
-                    color:'gray',
+                    color:'rgba(128,128,128,0.1)',
                     zIndex: 3
                 }
             },
@@ -453,7 +493,7 @@ const learn = {
                                 kind: 'span',
                                 className: 'material-symbols-outlined listbtn',
                                 text : 'apps',
-                                onClick: e => {
+                                onClick: e => {    
                                     location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#list`;
                                 },
                                 children: [
