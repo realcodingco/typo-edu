@@ -96,8 +96,11 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                             typingCount--;
                         }
                         let totalText = $('.ace_editor')[0].aceEditor.getValue().length; //입력된 전체 글자수
-                        let duringtime = (Date.now()-typingTime)/1000;
-                        $('.typingCount')[0].innerHTML = `<font size=3><b>${parseInt(typingCount/duringtime * 60)}</b></font> 타/분`;
+                        let duringtime = (Date.now() - typingTime) / 1000;
+                        let typingResult = parseInt(typingCount/duringtime * 60);
+                        if(!isNaN(typingResult) && typingResult > 0){
+                            $('.typingCount')[0].innerHTML = `<font size=3><b>${typingResult}</b></font> 타/분`;
+                        }
                     }
                 }, 500);
                 
@@ -357,12 +360,12 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                     }
 
                     $('.lessonWindow').addClass('half');
-            
+                    e.target.scrollIntoView({block:'start'});
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start'});
                         $('.lessonBook')[0].style.overflowY = 'hidden';
                         e.target.value = 'DONE';
                         editor.focus();
+                        adjustScroll(e.target);
                     }, 500);
                 }
                 else {
@@ -474,11 +477,12 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                     }
                     
                     $('.lessonWindow').addClass('half');
-                    
+                    e.target.scrollIntoView({block:'start'});
                     setTimeout(() => {
-                        e.target.scrollIntoView({block:'start'});
-                        $('.lessonBook')[0].style.overflowY = 'hidden';
                         e.target.value = 'DONE';
+                        editor.focus();
+                        $('.lessonBook')[0].style.overflowY = 'hidden';
+                        adjustScroll(e.target);
                     }, 500);
                 }
                 else {
@@ -623,6 +627,20 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         return result;
     }
 
+    /**
+     * scrollintoview 처리 후, 버튼이 뷰포트 바깥으로 밀리는 경우 스크롤 조정
+     * @param {*} item - 감시할 대상요소
+     */
+    function adjustScroll(item) {
+        const io = new IntersectionObserver((entry) => {
+            if (!entry[0].isIntersecting) {
+                $('.lessonBook')[0].scrollBy(0, -40); // 강제이동
+            } 
+            io.disconnect(); //관찰 해제
+        });
+        // 옵저버할 대상 DOM을 선택하여 관찰을 시작합니다.
+        io.observe(item);
+    }
     /**
      * 퀴즈 최종 제출하기 버튼 클릭 이벤트 핸들러
      * @param {*} e 
