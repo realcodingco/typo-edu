@@ -316,13 +316,11 @@ const admin = {
             }
         ]
     },
-    solveUnit: {
+    solveUnit: { //
         kind:'box',
         className: 'solveUnit',
         style: {
-            // display: 'flex',
-            width: '50%',
-            // background: 'rgba(231,214,255,1)'
+            width: '100%',
         },
         children: [
             {
@@ -338,7 +336,16 @@ const admin = {
                 }
             },
             {
-                kind : 'box',
+                kind : 'box', //문제, 보기,
+                className: 'previewQuestion',
+                children: [
+                    {
+                        kind: 'box',
+                    },
+                    {
+                        kind: 'box'
+                    }
+                ]
             },
             {
                 kind : 'box',

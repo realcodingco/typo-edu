@@ -7,17 +7,19 @@ toastr.options = {
 };
 (function(){
     initDatabase();
-    let padBg, courseData, userData, homepage, curProgress;
+    let padBg, courseData, userData, homepage, curProgress, diff, diffDay;
     let bookData = {};
     
     const mid = new URLSearchParams(location.search).get('p_userid');
     const crs = new URLSearchParams(location.search).get('p_cpsubj');
     let groupId = new URLSearchParams(location.search).get('bid');
     const crsStart = new URLSearchParams(location.search).get('edustart');
-    const diff = calcEndDate() - new Date();
-    const diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
+    
 
     if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
+        diff = calcEndDate() - new Date();
+        diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
+
         if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
             groupId = 'lotte';
         }
@@ -295,7 +297,7 @@ toastr.options = {
             const header = $(pop).find('.head-title')[0];
             header.innerText = `${score}점 / ${score >= 60 ? '수료' : '미수료'}`;
             let target = $(pop).find('.body-content')[0];
-            getSolve(target, quizData);
+            getSolve(target, crs, quizData);
         }
 
         if(quizRecord.score) { //최종 제출된 상태

@@ -237,6 +237,24 @@
     width:100%;
     height: calc(100% - 100px);
     background: rgba(73,95,216,0.9);
+    overflow: auto;
+}
+.popup-body::-webkit-scrollbar {
+    width: 10px;  /* 스크롤바의 너비 */
+    padding: 2px;
+}
+
+.popup-body::-webkit-scrollbar-thumb {
+    background: #ADD3FF; /* 스크롤바의 색상 */
+    /* border: 1px solid #584A52; */
+    border-radius: 125px;
+}
+
+.popup-body::-webkit-scrollbar-track {
+    background: rgba(45, 45, 245, 0.2);  /*스크롤바 뒷 배경 색상*/
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    background-clip: content-box; 
 }
 .body-content{
     width:100%;

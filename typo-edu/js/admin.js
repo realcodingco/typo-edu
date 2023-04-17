@@ -197,7 +197,7 @@
 
                 if(quizData) {
                     const listBg = quizBg.find('.solveList')[0];
-                    getSolve(listBg, quizData);
+                    getSolve(listBg, crs, quizData);
                     quizBg.find('.finalScore')[0].innerText = quizData.score ? `평가점수 : ${quizData.score || 0}` : '평가점수 : 응시중';
                 }
                 else {
@@ -412,32 +412,57 @@
     /**
      * 학습자 퀴즈풀이 데이터로 오답시트 생성하기
      * @param {bx} target 오답시트를 붙여줄 대상
+     * @param {string} crs 과정코드
      * @param {*} quizData 학습자 quiz 데이터
      */
-    function getSolve(target, quizData){
+    function getSolve(target, crs, quizData){
         const solve = quizData.solve; 
+        const printEntrance = () => {
+            const entranceTime = `마지막 입장시간 : ${new Date(quizData.entrance.time).toLocaleString()} / 열람횟수: ${quizData.entrance.count}`;
+            box().appendTo(target).text(entranceTime).textColor('white').padding(5).textAlign('left');
+        }
+        const printSheet = (quizId) => {
+            getBookData(crs, quizId, function(result) { //퀴즈교재 보기문항 가져오기
+                const quizPage = result.pages[0];
+                const questionData = Object.values(quizPage)[0].content;
+                
+                for(var i=0; i<solve.detail.length; i++){ //correct, question, userInput
+                    let quiz = BX.component(admin.solveUnit).appendTo(target);
+                    quiz.children()[0].innerText = i+1;
+                    quiz.find('.previewQuestion').children()[0].innerHTML = `${solve.detail[i].question}<br>`;
+                    const examples = questionData[i+1].example;
+                    const circleNumber = ['➀','➁','➂','➃'];
+                    const bogiBox = quiz.find('.previewQuestion').children()[1];
+                    let bogiTxt = '';
+                    for(let j=0; j<examples.length; j++) {
+                        bogiTxt += `${questionData[i+1].answer == j+1 ? '<font color=blue>' : ''}${circleNumber[j]} ${examples[j]}${questionData[i+1].answer == j+1 ? '</font>' : ''} <br>`;
+                    }
+                    bogiBox.innerHTML = bogiTxt;
+                    if(solve.detail[i].userInput){
+                        if(!solve.detail[i].correct) $(quiz.children()[0]).addClass('incorrect');
+                        quiz.children()[2].innerText = solve.detail[i].userInput;
+                    }
+                }
+                printEntrance();
+            });
+        }
         if(solve) {
             if(solve.time){
                 const solveTime = `제출일 : ${new Date(solve.time).toLocaleString()}`;
                 box().appendTo(target).text(solveTime).textColor('white').padding(5).textAlign('left');
             }
-            
-            for(var i=0; i<solve.detail.length; i++){ //correct, question, userInput
-                let quiz = BX.component(admin.solveUnit).appendTo(target);
-                quiz.children()[0].innerText = i+1;
-                if(solve.detail[i].userInput){
-                    if(!solve.detail[i].correct) $(quiz.children()[0]).addClass('incorrect');
-                    quiz.children()[1].innerHTML = solve.detail[i].question;
-                    quiz.children()[2].innerText = solve.detail[i].userInput;
-                }
-                else {
-                    quiz.children()[1].innerHTML = '<font color=#FF8E9B>풀지 않음</font>';
-                }
+            if(!totalCourse) {
+                getCourseData(function(totalcourse) {
+                    totalCourse = totalcourse;
+                    const quizId = totalCourse[crs].quiz[quizData.type];
+                    printSheet(quizId);
+                });
             }
-        }
-        const entranceTime = `마지막 입장시간 : ${new Date(quizData.entrance.time).toLocaleString()} / 열람횟수: ${quizData.entrance.count}`;
-        box().appendTo(target).text(entranceTime).textColor('white').padding(5).textAlign('left');
-        
+            else {
+                const quizId = totalCourse[crs].quiz[quizData.type];
+                printSheet(quizId);
+            }
+        } 
     }
 
     /**

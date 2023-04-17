@@ -226,8 +226,8 @@ pattern {
     padding: 45px 10px 0px 20px;
     font-size: 20px;
     overflow: hidden;
-    /* box-shadow: rgba(17, 17, 26, 0.1) 0px 4px 16px, rgba(17, 17, 26, 0.05) 0px 8px 32px; */
     transition: 0s;
+    text-align: center;
 }
 .lessonWindow.half {
     width: 100%;
@@ -274,6 +274,9 @@ pattern {
     font-family: GangwonEdu_OTFBoldA, sans-serif;
     scroll-behavior: smooth;
     color: #444;
+    margin: 0 auto;
+    text-align: left;
+    max-width: 1200px;
 }
 .lessonBook.next{
     overflow-y: auto;
