@@ -161,6 +161,7 @@ pattern {
     height: 100vh;
     background: #E0F5FF;
     font-family:'GmarketSans', sans-serif;
+    text-align: center;
 }
 .quizPaper{
     margin: 0px auto;
@@ -168,6 +169,8 @@ pattern {
     height: 100%;
     padding: 140px;
     overflow: auto;
+    text-align: left;
+    max-width: 1200px;
 }
 .quizPaper::-webkit-scrollbar {
     width: 8px;  /* 스크롤바의 너비 */

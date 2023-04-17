@@ -429,8 +429,8 @@ function loadEditTool(e) {
 
 
     const component = BX.component(editInput[selected]).appendTo(target);
-    if(selected == 'image') { //교재별 이미지 경로 문자열 자동완성 - 파일명만 입력하면 되도록
-        $(target).find('input[name=src]')[0].value = `./lecture/9627cb42/${location.hash.slice(1)}/`;
+    if(selected == 'image') { //교재별 이미지 경로 문자열 자동완성 - 파일명만 입력하면 되도록, 이미지는 교재폴더 안에 업로드
+        $(target).find('input[name=src]')[0].value = `./lecture/crs_code/${location.hash.slice(1)}/`;
     }
 
     const idBox = $(component).find('.progressIdbox')[0]; // id가 필요한 컴포넌트의 경우, 랜덤 id 부여
