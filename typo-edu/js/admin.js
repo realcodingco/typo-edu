@@ -9,11 +9,30 @@
     let resultBox;
     let totalBookData = {};
     let totalCourse, group, unstudied, crsStart;
+    let mailingList = {};
+    let sendToList = [];
     let bg = box().appendTo(topBox);
     let head = BX.component(admin.head).appendTo(bg);
-    const excelBtn = BX.component(admin.excelfileBtn).appendTo(bg);
+    const btns = box().appendTo(bg).width('auto').css('position', 'absolute').right(10).top(10);
+    const excelBtn = BX.component(admin.excelfileBtn).appendTo(btns);
+    const mailBtn = BX.component(admin.sendmailBtn).appendTo(btns);
+    mailBtn[0].onclick = openPopUpSheet;
     excelBtn[0].onclick = printExcelData;
-    BX.component(admin.headTag).appendTo(bg);
+    const topBar = BX.component(admin.headTag).appendTo(bg);
+    topBar[0].onclick = e => {
+        if(e.target == e.currentTarget) { //전체 선택
+            const toggle = $($('.selectmember')[0]).is(':checked');
+            $('.selectmember').each(function(i, o) {
+                if(!toggle) {
+                    $(o).prop('checked', true);
+                }
+                else {
+                    $(o).prop('checked', false);
+                }
+                
+            });
+        }
+    }
     resultBox = BX.component(admin.body).appendTo(bg);
     
     let optList = [
@@ -21,6 +40,160 @@
         {text : '롯데이지러닝', value: 'lotte'}
     ];
     appendSelectBox(head, optList, selectedGroup);
+
+    /**
+     * Mail 버튼 클릭이벤트 핸들러 : 메일 전송을 위한 팝업 생성
+     * @param {*} e 
+     * @returns 
+     */
+    function openPopUpSheet(e) {
+        if($('.selectmember:checked').length == 0) {
+            toastr.error('선택된 메일전송 대상이 없습니다.','',{positionClass: 'toast-top-right', progressBar: false});
+            return;
+        }
+        let today = new Date();
+        let month = today.getMonth() + 1;
+        const popup = BX.component(admin.mailingPopup).appendTo(bg);
+        // 입과환영 메일내용으로 텍스트 삽입용 클릭이벤트
+        popup.children()[2].onclick = e => {
+            popup.find('input')[0].value = `이지러닝 <#코스> ${month}월 입과 환영 및 수료 기준 안내`;
+            popup.find('textarea')[0].value = `안녕하세요. #이름 학습자님.
+
+이지러닝 <#코스> 과정의 ${month}월 입과를 환영합니다.
+다음과 같이 학습 기간 및 수료 기준에 대해 안내하오니 학습진행에 참고하시기 바랍니다.
+
+- 학습 기간 : ${month}월 ${new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()}일까지
+- 수료 기준 : #수료기준
+
+이지러닝의 진도율 표기는 학습이 종료된 이후(${month + 1}월 1~5일 이내) 일괄 연동됩니다.
+따라서 학습기간 중 진행하신 학습의 진도율은 각 주차별 학습진도 안내 메일을 통해 확인하실 수 있습니다.
+(매주 ?요일 발송예정)
+
+감사합니다.
+리얼코딩 드림`;
+        };
+        // default는 주차별 학습진도 안내 
+        popup.find('input')[0].value = `이지러닝 <#코스>  ${month}월 2주차 학습진도 안내`;
+        popup.find('textarea')[0].value = `안녕하세요. #이름 학습자님
+
+이지러닝 <#코스> ${month}월 2주차 학습진도를 아래와 같이 안내합니다.
+        
+#이름 학습자님의 현재 진도는 #진도% 입니다.
+        
+학습기간 내 수료기준을 충족할 수 있도록 학습을 진행하시기 바랍니다.
+수료기준 : #수료기준
+        
+감사합니다.
+리얼코딩 드림.
+        
+* 발신전용 메일입니다.`;
+        const postList = [];
+        let unit;
+        var convertTag = function(txts) {
+            var tagValues = {
+                '#코스' : unit.crsName,
+                '#진도' : unit.progress,
+                '#수료기준' : unit.completed,
+                '#이름' : unit.name
+            };
+            Object.keys(tagValues).forEach(function(tag){
+                txts = txts.replace(tag, tagValues[tag]);
+            });
+            if(txts.includes('#')) {
+                return convertTag(txts);
+            }
+            return txts; 
+        };
+        // 메일 전송버튼 클릭이벤트
+        popup.find('button')[0].onclick = e => {
+            let count = 0;
+            const sendByone = () => {
+                if(postList.length == 0) {
+                    toastr.success(`${count}건이 발송되었습니다.`, '', {positionClass: 'toast-top-left'});
+                    return;
+                }
+                
+                unit = postList.shift();
+                const title = convertTag(popup.find('input')[0].value);
+                const content = convertTag(popup.find('textarea')[0].value);
+                let from = 'help@cellwork.net';
+                let emailAddress = mailingList[unit.mid].email; 
+                postEmail(from, emailAddress, title, content, function(result) {
+                    // 성공실패 표시 후, 다음 전송
+                    if(result.ok) {
+                        $($('.mTag')[count]).addClass('success');
+                    }
+                    else {
+                        $($('.mTag')[count]).addClass('fail');
+                    }
+                    count++;
+                    setTimeout(sendByone, 1000);
+                });
+            }
+            sendByone();
+        }
+        // 메일발송대상 체크를 위해 체크박스 요소 확인
+        $('.selectmember').each(function(i, o) {
+            if( $(o).is(':checked') ) {
+                const mid = o.dataset.id;
+                const crs = mailingList[mid].crs;
+                const data = {
+                    mid : mid,
+                    crs : crs,
+                    crsName : totalCourse[crs].title,
+                    progress : groupData[mid].course[crs].finalprog,
+                    completed : totalCourse[crs].completed,
+                    name : groupData[mid].name
+                };
+                postList.push(data);
+                BX.component(admin.mTag).appendTo(popup.children()[1]).text(data.name);
+            }
+        });
+    }
+
+    /**
+     * 메일전송 API
+     * @param {*} from 발신자 
+     * @param {*} email 수신자
+     * @param {*} title 제목
+     * @param {*} content 내용
+     * @param {*} fn 
+     * @returns 
+     */
+    function postEmail(from, email, title, content, fn){
+        if(!email || !title || !content) {
+            if(fn) fn(false, param);
+            return;
+        }
+
+        if(/^[a-z0-9][a-z0-9-_\.]+@([a-z]|[a-z0-9]?[a-z0-9-]+[a-z0-9])\.[a-z0-9]{2,10}(?:\.[a-z]{2,10})?$/.test(email) == false) {
+            toastr.error(`이메일 규격이 잘못되었습니다.<br>${email}`, '실패', {positionClass: 'toast-top-left'});
+            return;
+        }
+
+        var fnQueue = function(){
+            var reqParam = {
+                from: from,
+                email: email,
+                subject: title || '제목없음',
+                message: content || '내용없음'
+            };            
+            reqParam.message = reqParam.message.replace(/\n/g, '<br/>');
+            console.log(reqParam);
+            var url = 'https://www.realcoding.co/api/cellcode/email/post';
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json;charset=utf-8",
+                },
+                body: JSON.stringify(reqParam),
+            })
+            .then((response) => {
+                if(fn) fn(response);
+            });
+        };
+        setTimeout(fnQueue, 100);
+    }
 
     /**
      * EXCEL 버튼 클릭이벤트 핸들러 : 결과전송 처리 후 엑셀파일 정리를 위한 데이터 출력
@@ -94,12 +267,30 @@
                 resultBox.empty();
                 const keyword = inputEl.value;
                 crsStart = keyword;
-                getYmonthUser(group, keyword.substring(0, 6), function(docs) {
-                    for(const doc of docs) {
-                        groupData[doc.id] = doc.data();
-                        appendResult(doc.data());
-                    }
-                    $('.headTag')[0].innerText = `${docs.length}건`;
+
+                // 미학습자 출력.
+                crsStart = keyword;
+                const lastDays = new Date(crsStart.substring(0,4), Number(crsStart.substring(4,6)) + 1, 0).getDate();
+                const finalDate = `${crsStart.substring(0, 6)}${lastDays}`;
+                getEnrollList(group, crsStart, finalDate, function(result){ //배열
+                    $('.headTag')[0].innerText = `${result.length}건`;
+
+                    getYmonthUser(group, keyword.substring(0, 6), function(docs) {
+                        for(const doc of docs) {
+                            groupData[doc.id] = doc.data();
+                        }
+                        
+                        for(let user of result) {
+                            if(Object.keys(groupData).includes(user.mid)) { //학습자
+                                appendResult(groupData[user.mid]);
+                            }
+                            else { //미학습자
+                                groupData[user.mid] = user; //미학습자 데이터 생성해서 검색 결과 데이터로 편입.
+                                appendResult(user);
+                            }
+                        }
+                        $('.excelfileBtn').show();
+                    });
                 });
             }
         }
@@ -111,7 +302,9 @@
             const lastDays = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             const finalDate = `${today.getFullYear()}${curMonth.padStart(2, '0')}${lastDays}`;
             crsStart = firstDate;
-            getUnstudiedList(group, firstDate, finalDate, function(result){ //배열
+            getEnrollList(group, firstDate, finalDate, function(result){ //배열
+                const groupUser = Object.keys(groupData);
+                result = result.filter(o => !groupUser.includes(o.mid)); // 일치하는 mid가 없으면
                 $('.headTag')[0].innerText = `${result.length}건`;
                 for(let user of result) {
                     groupData[user.mid] = user; //미학습자 데이터 생성해서 검색 결과 데이터로 편입.
@@ -159,6 +352,9 @@
         const bg = BX.component(admin.dataBox).appendTo(resultBox);
         bg.find('.userName')[0].innerText = data.name;
         bg.find('.userId')[0].innerText = data.mid;
+        const checkbox = bg.find('.selectmember')[0];
+        checkbox.dataset.id = data.mid;
+
         const studied = data.course;
         const drawList = function(){
             Object.keys(studied).forEach(function(crs){
@@ -179,11 +375,12 @@
                 if(progress){
                     const listBg = progBg.find('.progressList')[0];
                     getProgress(listBg, crs, totalCourse[crs].books, progress, function(finalprogress){
-                        // groupData[data.mid].course[crs].finalprog = finalprogress;
+                        // 관리자페이지에서 조회 시점의 최종 진도율 : 주차별 학습진도 안내 메일링에서 사용
+                        groupData[data.mid].course[crs].finalprog = finalprogress;
                     }); 
                 } 
                 else {
-                    // groupData[data.mid].course[crs].finalprog = 0;
+                    groupData[data.mid].course[crs].finalprog = 0;
                     progBg.find('.totalProgress')[0].innerText = '학습진도율 : 0%';
                     progBg.find('.totalProgress')[0].dataset.progress = 0;
                     progBg.find('div :not(:first-child)').hide();
@@ -203,6 +400,11 @@
                 else {
                     quizBg.find('.finalScore')[0].innerText = '평가점수 : 미응시';
                     quizBg.find('div :not(:first-child)').hide();
+                }
+
+                if(!progress && !quizData) {
+                    const status = line.find('.studyStatus')[0];
+                    status.innerText = '미학습';
                 }
 
                 // 결과전송버튼 노출 조건 : edustart 기준 익월 1일이후
@@ -280,19 +482,22 @@
     }
 
     /**
-     * 입과리스트에서 미학습자 리스트 추출하기
+     * 입과리스트 추출하기
      * @param {*} groupId 
      * @param {*} crsStart 
      * @param {*} crsEnd 
      * @param {*} fn 
      */
-    function getUnstudiedList(groupId, crsStart, crsEnd, fn) {
-        const createUnstudiedData = (totalList) => {
-            const groupUser = Object.keys(groupData);
-            const target = totalList.filter(o => !groupUser.includes(o.userId)); // 일치하는 mid가 없으면
-            
+    function getEnrollList(groupId, crsStart, crsEnd, fn) {
+        const createData = (totalList) => {
             let arr = [];
-            for(let user of target) {
+            for(let user of totalList) {
+                mailingList[user.userId] = { //메일링을 위한 데이터
+                    email : user.email,
+                    name : user.userNm,
+                    crs : user.cpCourseCd
+                };
+
                 let data = {};
                 data.groupId = group;
                 data.name = user.userNm;
@@ -316,36 +521,33 @@
                         userNm : '김하나',
                         userId: 'test',
                         courseCd : 'E187611',
-                        courseCsNo : '04'
+                        courseCsNo : '04',
+                        email: 'tohj@realcoding.co'
                     },
                     {
                         cpCourseCd : 'L018761',
                         userNm : '김철수',
                         userId: 'test1',
                         courseCd : 'E187611',
-                        courseCsNo : '04'
+                        courseCsNo : '04',
+                        email: 'tohj@realcoding.co'
                     },
                     {
                         cpCourseCd : 'L018761',
                         userNm : '이호',
                         userId: 'test2',
                         courseCd : 'E187611',
-                        courseCsNo : '03'
-                    },
-                    ,
-                    {
-                        cpCourseCd : 'L018761',
-                        userNm : '송미',
-                        userId: 'test6',
-                        courseCd : 'E187611',
-                        courseCsNo : '03'
+                        courseCsNo : '03',
+                        email: 'tohj@realcoding.co'
                     }
                 ];
-                fn(createUnstudiedData(totalList));
+                fn(createData(totalList));
             }
             else { // '23. 5월 상용화
                 getLotteEntrance(crsStart, crsEnd, function(result) {
-                    fn(createUnstudiedData(result));
+                    const targetCourse = ['L018761']; // 관리대상 교육과정코드 목록
+                    const matched = result.filter(o => targetCourse.includes(o.cpCourseCd));
+                    fn(createData(matched));
                 });   
             }
         }
@@ -489,9 +691,8 @@
         let totalProgress = 0;
         let count = 0;
         let progData = [];
-
+        let bookData = {};
         Object.keys(books).forEach(function(o, pos){
-            let bookData = {};
             const calcProg = function(json){
                 const bid = json.id;
                 bookData[bid] = json; 

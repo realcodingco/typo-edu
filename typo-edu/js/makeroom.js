@@ -883,7 +883,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             inputCode[codeId] = codeData; 
 
             bookData[pageId].code = inputCode;
-            
             record.progress[bookId] = bookData;
             // 데이터 업데이트 저장.
             updateProgressData(record);
@@ -1263,7 +1262,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
 
                     playSound('choice'); console.log(done, 'response');
                     e.target.disabled = true;
-                
                     userData.course[crs].totalProgress =  progress;
                     updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
                 });

@@ -82,6 +82,15 @@ const admin = {
                 kind: 'box',
                 children: [
                     {
+                        kind: 'input',
+                        type: 'checkbox',
+                        className: 'selectmember',
+                        style: {
+                            scale: '1.5',
+                            margin: 8
+                        }
+                    },
+                    {
                         kind:'span',
                         className : 'userName',
                         style: {
@@ -167,14 +176,22 @@ const admin = {
             }
         ]
     },
+    sendmailBtn: {
+        kind: 'button',
+        className: 'mailingBtn',
+        text: 'Mail',
+        style: {
+            margin: '0 10px'
+        }
+    },
     excelfileBtn: {
         kind: 'button',
         className: 'excelfileBtn',
         text: 'Excel',
         style: {
-            position: 'absolute',
-            right: 10,
-            top: 10,
+            // position: 'absolute',
+            // right: 10,
+            // top: 10,
             display: 'none'
         }
     },
@@ -383,5 +400,99 @@ const admin = {
                 
             }
         ]
+    },
+    mailingPopup : {
+        kind: 'box',
+        style: {
+            width: '100%',
+            height: '100%',
+            position: 'fixed',
+            left: 0, 
+            top: 0,
+            background: 'rgba(0,0,0,0.9)',
+            textAlign: 'center',
+            padding: '15px 30px'
+        },
+        children: [
+            {
+                kind: 'box',
+                text: 'X',
+                style: {
+                    width: 'auto',
+                    fontSize: 30,
+                    margin: '0px 20px 0 0',
+                    float: 'right',
+                    color: 'white'
+                },
+                onClick: e => {
+                    $(e.target).parent().remove();
+                }
+            },
+            {
+                kind: 'box',
+                style: {
+                    textAlign: 'left',
+                    maxHeight: 80
+                }
+            },
+            {
+                kind:'box',
+                style: {
+                    position:'absolute',
+                    width: 14,
+                    height:14,
+                    borderRadius: 100,
+                    background: '#137F7A',
+                    left: 30,
+                    top: 120
+                }
+            },
+            {
+                kind: 'input',
+                spellcheck: 'false',
+                style: {
+                    width: '80%',
+                    height: 40,
+                    padding: 20,
+                    fontSize: 15,
+                    marginTop: 10,
+                    outline: 'none',
+                    background: 'transparent',
+                    border: '1px solid gray',
+                    color:'#6AD0C6',
+                }
+            },
+            {
+                kind: 'textarea',
+                spellcheck: 'false',
+                style: {
+                    width: '80%',
+                    height: 380,
+                    marginTop: 20,
+                    fontSize: 15,
+                    outline: 'none',
+                    padding: 20,
+                    background: 'transparent',
+                    color:'#6AD0C6',
+                    fontWeight: 100
+                }
+            },
+            {
+                kind:'box',
+                children: [
+                    {
+                        kind:'button',
+                        text:'전송',
+                        style: {
+                            padding: '5px 20px'
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    mTag : {
+        kind: 'box',
+        className:'mTag'
     }
 }

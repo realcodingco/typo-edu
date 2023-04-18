@@ -45,3 +45,18 @@
 .studyStatus.final {
     font-weight: bold;
 }
+.mTag {
+    font-size: 12px;
+    color: white;
+    border: 1px solid gray;
+    border-radius: 10px;
+    margin: 5px;
+    width: auto;
+    padding: 5px 10px;
+}
+.mTag.success {
+    background: blue;
+}
+.mTag.fail{
+    background: red;
+}
