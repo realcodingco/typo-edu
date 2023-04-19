@@ -34,7 +34,7 @@
         }
     }
     resultBox = BX.component(admin.body).appendTo(bg);
-    /*// 관리자 확인 팝업
+    // 관리자 확인 팝업
     const adminPop = BX.component(admin.accessPopup).appendTo(bg);
     adminPop.find('button')[0].onclick = e => {
         // 관리자 메일발송, 입력창 만들고, 시간...
@@ -69,7 +69,7 @@
             }
         });
     };
-    */
+    
     let optList = [
         {text: '그룹선택', value : 'default'},
         {text : '롯데이지러닝', value: 'lotte'}
