@@ -1,5 +1,5 @@
 //교재 만들기 편집 도구
-let bookData = getBookData();
+let bookData = getBookData(); console.log(bookData);
 let favoriteStyle = JSON.parse(localStorage.getItem("style")) || [];
 let totalCourse = getTotalCourseData();
 let previewBox, contentList, editBox;
@@ -22,6 +22,22 @@ function appendMakeBook(){
         Object.keys(bookData).forEach(id => {
             $("#bookSelect").append(`<option value="${id}">${bookData[id].title}</option>`);
         });
+    }
+    else { //bookData가 없으면, json 데이터 가져오기
+        bookData = {};
+        getJsonData('./lecture/course.json', json => {
+            Object.keys(json).forEach(function(crs) {
+                const books = json[crs].books;
+                const ids = books.map(o => o.id);
+                
+                for(var id of ids) {
+                    getBook(crs, id, function(data) {
+                        bookData[id] = data;
+                        $("#bookSelect").append(`<option value="${id}">${bookData[id].title}</option>`);
+                    });
+                }
+            });
+        })
     }
     
     previewBox = box().appendTo(bg).size('65%', 'calc(100vh - 40px)').padding(20).overflow('auto').fontSize(20).fontFamily('GangwonEdu_OTFBoldA, sans-serif');
@@ -207,7 +223,6 @@ function manageCourse(e) {
         $("#courseSelect").append(`<option value="${cid}">${totalCourse[cid].title}</option>`);
     })
     
-
     // 저장버튼 클릭이벤트 
     $(popWindow).find('button')[0].onclick = e => {
         let isSave = confirm('저장하시겠습니까?');

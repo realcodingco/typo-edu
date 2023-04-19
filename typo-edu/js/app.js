@@ -15,8 +15,8 @@ toastr.options = {
     let groupId = new URLSearchParams(location.search).get('bid');
     const crsStart = new URLSearchParams(location.search).get('edustart');
     
-
-    if(location.pathname.includes('index')) { // index 페이지에서만 화면생성
+    // index 페이지에서만 화면생성 
+    if(!location.pathname.includes('admin') && !location.pathname.includes('makeroom') && !location.pathname.includes('makeBook')) { 
         diff = calcEndDate() - new Date();
         diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
 
