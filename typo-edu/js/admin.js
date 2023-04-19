@@ -34,7 +34,42 @@
         }
     }
     resultBox = BX.component(admin.body).appendTo(bg);
-    
+    // 관리자 확인 팝업
+    const adminPop = BX.component(admin.accessPopup).appendTo(bg);
+    adminPop.find('button')[0].onclick = e => {
+        // 관리자 메일발송, 입력창 만들고, 시간...
+        const adminMail = 'tohj@realcoding.co';
+        const accessCode = randomId();
+        const validTime = Date.now() + 180000; // 3분 내
+        const timeText = new Date(validTime).toLocaleTimeString();
+        
+        const content = `관리자 페이지에 다음의 접근코드를 입력하세요. (${timeText} 까지)<br>${accessCode}`;
+        postEmail('help@cellwork.net', adminMail, '관리자 접근확인', content, function(result) {
+            if(result.ok) {
+                adminPop.find('p')[0].innerText = `관리자 메일로 발송된 코드 입력 후 엔터키 사용. (${timeText} 까지)`;
+                $(e.target).next().show();
+                $(e.target).next()[0].onkeyup = e => {
+                    if(e.key == 'Enter') { // 코드 확인
+                        if(Date.now() > validTime) { //유효시간을 벗어난 경우
+                            toastr.error('입력시간이 초과되었습니다.<br>페이지를 새로고침해 다시 시도하세요.','', {positionClass: 'toast-top-right', progressBar: false});
+                            $(e.target).hide();
+                            return; 
+                        }
+        
+                        if(e.target.value == accessCode) {
+                            $(adminPop).remove();
+                        }
+                        else {
+                            toastr.error('코드가 일치하지 않습니다.','접근불가', {positionClass: 'toast-top-right', progressBar: false});
+                        }
+                    }
+                };
+                $(e.target).remove();
+                
+            }
+        });
+    };
+
     let optList = [
         {text: '그룹선택', value : 'default'},
         {text : '롯데이지러닝', value: 'lotte'}
@@ -118,6 +153,7 @@
                 const content = convertTag(popup.find('textarea')[0].value);
                 let from = 'help@cellwork.net';
                 let emailAddress = mailingList[unit.mid].email; 
+                postEmail(from, from, title, content, ()=>{}); // 확인용 메일발송
                 postEmail(from, emailAddress, title, content, function(result) {
                     // 성공실패 표시 후, 다음 전송
                     if(result.ok) {
@@ -179,7 +215,7 @@
                 message: content || '내용없음'
             };            
             reqParam.message = reqParam.message.replace(/\n/g, '<br/>');
-            console.log(reqParam);
+            
             var url = 'https://www.realcoding.co/api/cellcode/email/post';
             fetch(url, {
                 method: "POST",

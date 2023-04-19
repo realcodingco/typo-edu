@@ -401,6 +401,58 @@ const admin = {
             }
         ]
     },
+    accessPopup: {
+        kind: 'box',
+        style: {
+            width: '100%',
+            height: '100%',
+            position: 'fixed',
+            left: 0, 
+            top: 0,
+            background: 'rgba(7,51,48,0.9)',
+            textAlign: 'center',
+            padding: '15px 30px'
+        },
+        children: [
+            {
+                kind: 'box',
+                text : '관리자 페이지에 접속하시겠습니까?',
+                style: {
+                    width: '100%',
+                    fontSize: 30,
+                    margin: '20% 0 0 0',
+                    // top: '25%',
+                    color: 'white'
+                },
+            },
+            {
+                kind: 'p',
+                text: '관리자 이메일로 접근코드가 발송됩니다',
+                style: {
+                    color:'#51FF9C',
+                    fontSize: 16
+                }
+            },
+            {
+                kind: 'button',
+                text: '접속하기',
+                style: {
+                    padding: '5px 20px',
+                    marginTop: 20
+                }
+            },
+            {
+                kind: 'input',
+                spellcheck: 'false',
+                style: {
+                    display: 'none',
+                    margin: '20px auto',
+                    padding: 10,
+                    outline: 0,
+                }
+            }
+        ]
+    },
     mailingPopup : {
         kind: 'box',
         style: {
