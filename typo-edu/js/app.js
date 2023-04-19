@@ -309,14 +309,12 @@ toastr.options = {
                 toastr.error('수강기간이 아니므로 응시할 수 없습니다.');
             }
         }
-        else { //진도 80% 이상일때만 입장
-            if(curProgress >= 80) {
-                quizButton.onclick = enterQuiz;
-            }
-            else {
-                quizButton.onclick = e => {
-                    toastr.error('학습진도율 80% 미만입니다.');
-                }
+        else if(curProgress >= 80) {//진도 80% 이상일때만 입장
+            quizButton.onclick = enterQuiz;
+        }
+        else {
+            quizButton.onclick = e => {
+                toastr.error('학습진도율 80% 미만입니다.');
             }
         }
     }

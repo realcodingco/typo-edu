@@ -34,7 +34,7 @@
         }
     }
     resultBox = BX.component(admin.body).appendTo(bg);
-    // 관리자 확인 팝업
+    /*// 관리자 확인 팝업
     const adminPop = BX.component(admin.accessPopup).appendTo(bg);
     adminPop.find('button')[0].onclick = e => {
         // 관리자 메일발송, 입력창 만들고, 시간...
@@ -69,7 +69,7 @@
             }
         });
     };
-
+    */
     let optList = [
         {text: '그룹선택', value : 'default'},
         {text : '롯데이지러닝', value: 'lotte'}
@@ -424,6 +424,15 @@
                 //퀴즈 데이터 출력
                 const quizBg = BX.component(admin.quizInfoBox).appendTo(bg);
                 const quizData = crsData.quiz;
+                quizBg.find('.autosumitBtn')[0].onclick = e => {
+                    const answer = confirm(`${data.mid} 학습자의 퀴즈풀이를 자동 제출하시겠습니까?`);
+                    if(answer) {
+                        autoSubmit(data.mid, crs, function(score) {
+                            const finalScore = score;
+                            $(e.target).parent().find('.finalScore')[0].innerText = `평가점수 : ${finalScore}`;
+                        });
+                    }
+                };
                 quizBg.find('button:last-child')[0].onclick = deleteQuizRecord;
                 quizBg.find('button:last-child')[0].dataset.mid = data.mid;
                 quizBg.find('button:last-child')[0].dataset.crs = crs;
@@ -432,6 +441,9 @@
                     const listBg = quizBg.find('.solveList')[0];
                     getSolve(listBg, crs, quizData);
                     quizBg.find('.finalScore')[0].innerText = quizData.score ? `평가점수 : ${quizData.score || 0}` : '평가점수 : 응시중';
+                    if(!quizData.score) {
+                        quizBg.find('.autosumitBtn')[0].style.display = 'block';
+                    }
                 }
                 else {
                     quizBg.find('.finalScore')[0].innerText = '평가점수 : 미응시';
@@ -588,7 +600,27 @@
             }
         }
     }
-
+    /**
+     * 퀴즈 응시기록은 있으나 제출하지 않은 학습자 자동제출 처리
+     * @param {*} mid 
+     * @param {*} crs 
+     * @param {*} fn 
+     */
+    function autoSubmit(mid, crs, fn) {
+        let solve = groupData[mid].course[crs].quiz.solve.detail;
+        let correct = solve.filter(o => o.correct).length; // 맞은 개수
+        let incorrect = solve.length - correct; // 틀린갯수
+        let score = 5 * correct; // 20문항 5점씩, 100점 만점
+        groupData[mid].course[crs].quiz.score = score; // score 데이터가 있다면 최종 제출된 상태임
+        groupData[mid].course[crs].quiz.solve.correctCount = correct;
+        groupData[mid].course[crs].quiz.solve.incorrectCount = incorrect;
+        groupData[mid].course[crs].quiz.solve.time = Date.now();
+        groupData[mid].course[crs].quiz.solve.autoSubmit = true; //자동제출 건인지 기록
+        updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+            toastr.success('자동제출 되었습니다.');
+            if(fn) fn(score);
+        });
+    }   
     /**
      * 퀴즈 기록 초기화 버튼 클릭 이벤트 핸들러
      * @param {*} e 
@@ -667,7 +699,7 @@
                 for(var i=0; i<solve.detail.length; i++){ //correct, question, userInput
                     let quiz = BX.component(admin.solveUnit).appendTo(target);
                     quiz.children()[0].innerText = i+1;
-                    quiz.find('.previewQuestion').children()[0].innerHTML = `${solve.detail[i].question}<br>`;
+                    quiz.find('.previewQuestion').children()[0].innerHTML = `${questionData[i+1].question}<br>`;
                     const examples = questionData[i+1].example;
                     const circleNumber = ['➀','➁','➂','➃'];
                     const bogiBox = quiz.find('.previewQuestion').children()[1];
@@ -680,8 +712,11 @@
                         if(!solve.detail[i].correct) $(quiz.children()[0]).addClass('incorrect');
                         quiz.children()[2].innerText = solve.detail[i].userInput;
                     }
+                    else {//풀지 않은 문항은 틀린것으로 
+                        $(quiz.children()[0]).addClass('incorrect');
+                    }
                 }
-                printEntrance();
+                printEntrance(); //입장기록 출력
             });
         }
         if(solve) {

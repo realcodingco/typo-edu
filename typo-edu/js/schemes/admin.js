@@ -312,6 +312,20 @@ const admin = {
                         }
                     },
                     {
+                        kind: 'button',
+                        className: 'autosumitBtn',
+                        text: '제출',
+                        style: {
+                            display: 'none',
+                            padding: 5,
+                            marginRight:10,
+                            border: 0,
+                            borderRadius: 4,
+                            float:'right',
+                            background : '#FFC6CF'
+                        }
+                    },
+                    {
                         kind : 'button',
                         text : '초기화',
                         style: {
