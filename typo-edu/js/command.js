@@ -111,7 +111,6 @@ function bgImage(name) {
  */
 function playSound(name) {
     bgAudio.pause();
-    console.log(bgAudio.paused)
     bgAudio.currentTime = 0;
     let src = `./sound/${name}.mp3`;
     bgAudio.src = src;
@@ -471,13 +470,14 @@ function createComponent(unit) {
                     // pageId 전달
                     const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
                     $('.appTitle')[0].dataset.pid = pageId;
-                    const bookId = new URLSearchParams(location.search).get('book');
+                    // bookId 파라미터 값 makeroom.js 전역변수
                     if(record.progress && record.progress[bookId]) {
                         const pageRecord = record.progress[bookId][pageId];
-                        if(pageRecord && pageRecord.code) {
+                        
+                        if(pageRecord && pageRecord.code) { 
                             if(pageRecord.code[codeId]) {
                                 const codeRecord = pageRecord.code[codeId].code;
-                                editor.setValue(codeRecord);
+                                editor.setValue(codeRecord); 
                                 editor.navigateFileEnd(); //커서는 마지막 라인으로 
                             }
                         }
@@ -588,7 +588,7 @@ function createComponent(unit) {
                     // pageId 전달
                     const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
                     $('.appTitle')[0].dataset.pid = pageId;
-                    const bookId = new URLSearchParams(location.search).get('book');
+                    // bookId 파라미터 값 makeroom.js 전역변수
                     if(record.progress && record.progress[bookId]) {
                         const pageRecord = record.progress[bookId][pageId];
                         if(pageRecord && pageRecord.code) {

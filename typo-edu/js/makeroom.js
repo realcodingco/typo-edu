@@ -42,6 +42,7 @@ let clickedRunBtn = false;
     window.crs = crs;
     window.mid = mid;
     window.crsStart = crsStart;
+    window.bookId = bookId;
 
     getCrsBookData(crs, function(json) {
         courseData = json.courseData;
@@ -459,10 +460,7 @@ let clickedRunBtn = false;
                 bookData[pageId] = {code : {}};
             }
 
-            const inputCode = {};
-            inputCode[codeId] = codeData; 
-
-            bookData[pageId].code = inputCode;
+            bookData[pageId].code[codeId] = codeData;
             record.progress[bookId] = bookData;
             // 데이터 업데이트 저장.
             updateProgressData(record);

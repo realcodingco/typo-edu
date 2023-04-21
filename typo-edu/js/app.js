@@ -436,7 +436,7 @@
                     
                     let chapCompeleteProgress = (((bookCount+1) / 24) * 100).toFixed(2);
                     const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
-                    const encoded = `makeroom.html?${btoa(queryStr)}`;
+                    const encoded = `makeroom.html?eq=${btoa(queryStr)}`;
                     if(curProgress == 100) {
                         app.find('a')[0].href = encoded;
                     }
