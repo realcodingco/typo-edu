@@ -433,6 +433,7 @@
                         autoSubmit(data.mid, crs, function(score) {
                             const finalScore = score;
                             $(e.target).parent().find('.finalScore')[0].innerText = `평가점수 : ${finalScore}`;
+                            e.target.style.display = 'none';
                         });
                     }
                 };
