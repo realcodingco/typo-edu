@@ -459,7 +459,10 @@ let clickedRunBtn = false;
             if(!bookData[pageId]) { // 페이지 데이터가 없으면
                 bookData[pageId] = {code : {}};
             }
-
+            
+            if(!bookData[pageId].code) {
+                bookData[pageId].code = {};
+            }
             bookData[pageId].code[codeId] = codeData;
             record.progress[bookId] = bookData;
             // 데이터 업데이트 저장.
