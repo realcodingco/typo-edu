@@ -1,9 +1,4 @@
 (function(){
-    window.getSolve = getSolve;
-
-    if(!location.pathname.includes('admin')){
-        return;
-    }
     initDatabase();
     let groupData = {};
     let resultBox;
@@ -19,8 +14,8 @@
     mailBtn[0].onclick = openPopUpSheet;
     excelBtn[0].onclick = printExcelData;
     const topBar = BX.component(admin.headTag).appendTo(bg);
-    topBar[0].onclick = e => {
-        if(e.target == e.currentTarget) { //전체 선택
+    topBar[0].onclick = e => {//메일발송 대상 전체선택
+        if(e.target == e.currentTarget) { 
             const toggle = $($('.selectmember')[0]).is(':checked');
             $('.selectmember').each(function(i, o) {
                 if(!toggle) {
@@ -29,18 +24,17 @@
                 else {
                     $(o).prop('checked', false);
                 }
-                
             });
         }
     }
     resultBox = BX.component(admin.body).appendTo(bg);
-    // 관리자 확인 팝업
+    //관리자 확인 팝업
     const adminPop = BX.component(admin.accessPopup).appendTo(bg);
     adminPop.find('button')[0].onclick = e => {
         // 관리자 메일발송, 입력창 만들고, 시간...
-        const adminMail = 'tohj@realcoding.co';
+        const adminMail = 'tohj@realcoding.co'; //관리자 이메일
         const accessCode = randomId();
-        const validTime = Date.now() + 180000; // 3분 내
+        const validTime = Date.now() + 180000; // 유효시간 3분
         const timeText = new Date(validTime).toLocaleTimeString();
         
         const content = `관리자 페이지에 다음의 접근코드를 입력하세요. (${timeText} 까지)<br>${accessCode}`;
@@ -117,6 +111,8 @@
         
 학습기간 내 수료기준을 충족할 수 있도록 학습을 진행하시기 바랍니다.
 수료기준 : #수료기준
+
+이미 학습을 완료하셨다면 본 메일은 무시하셔도 좋습니다.(3주차만)
         
 감사합니다.
 리얼코딩 드림.
@@ -350,9 +346,16 @@
             });
         }
     }
-    // 입과일 목록의 데이터 가져오기
+    /**
+     * 입과일 목록의 데이터 가져오기
+     * @param {*} bid 그룹id
+     * @param {string} ymonth yymmdd 문자열
+     * @param {*} fn 
+     */
     function getYmonthUser(bid, ymonth, fn) {
-        BX.db.firestore().collection('lecture').doc(bid).collection('monthly').doc(ymonth).collection('members')
+        BX.db.firestore().collection('lecture').doc(bid)
+                         .collection('monthly').doc(ymonth)
+                         .collection('members')
             .get().then(snapshop => {
                 const {docs} = snapshop;
                 if(fn) fn(docs);
@@ -601,6 +604,20 @@
         }
     }
     /**
+     * 롯데이지러닝 입과일 기준 입과리스트 가져오기
+     * @param {*} crsStart - yyyymmdd
+     * @param {*} crsEnd - null이면 crsStart기준 말일로 자동 설정
+     * @param {*} fn 
+     */
+    function getLotteEntrance(crsStart, crsEnd, fn) {
+        if(!crsStart) console.log(crsStart,'error')
+        if(!crsEnd) crsEnd = YYYYMMDD(calcEndDate(crsStart));
+        $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
+            result = result.data.enrollment;
+            fn(result);
+        });
+    }
+    /**
      * 퀴즈 응시기록은 있으나 제출하지 않은 학습자 자동제출 처리
      * @param {*} mid 
      * @param {*} crs 
@@ -665,96 +682,6 @@
                 $($(e.target).parents()[1]).find('.progressList')[0].style.display = 'none';
             });
         }
-    }
-
-    /**
-     * 전체 코스 데이터 가져오기
-     * @param {*} fn 
-     */
-    function getCourseData(fn){
-        $.ajax({url: "./lecture/course.json", dataType: "json"})
-        .done((json) => {
-            if(fn) fn(json);
-        })
-        .fail((xhr, status, error) => {});
-    }
-
-    /**
-     * 학습자 퀴즈풀이 데이터로 오답시트 생성하기
-     * @param {bx} target 오답시트를 붙여줄 대상
-     * @param {string} crs 과정코드
-     * @param {*} quizData 학습자 quiz 데이터
-     */
-    function getSolve(target, crs, quizData){
-        const solve = quizData.solve; 
-        const printEntrance = () => {
-            const entranceTime = `마지막 입장시간 : ${new Date(quizData.entrance.time).toLocaleString()} / 열람횟수: ${quizData.entrance.count}`;
-            box().appendTo(target).text(entranceTime).textColor('white').padding(5).textAlign('left');
-        }
-        const printSheet = (quizId) => {
-            getBookData(crs, quizId, function(result) { //퀴즈교재 보기문항 가져오기
-                const quizPage = result.pages[0];
-                const questionData = Object.values(quizPage)[0].content;
-                
-                for(var i=0; i<solve.detail.length; i++){ //correct, question, userInput
-                    let quiz = BX.component(admin.solveUnit).appendTo(target);
-                    quiz.children()[0].innerText = i+1;
-                    quiz.find('.previewQuestion').children()[0].innerHTML = `${questionData[i+1].question}<br>`;
-                    const examples = questionData[i+1].example;
-                    const circleNumber = ['➀','➁','➂','➃'];
-                    const bogiBox = quiz.find('.previewQuestion').children()[1];
-                    let bogiTxt = '';
-                    for(let j=0; j<examples.length; j++) {
-                        bogiTxt += `${questionData[i+1].answer == j+1 ? '<font color=blue>' : ''}${circleNumber[j]} ${examples[j]}${questionData[i+1].answer == j+1 ? '</font>' : ''} <br>`;
-                    }
-                    bogiBox.innerHTML = bogiTxt;
-                    if(solve.detail[i].userInput){
-                        if(!solve.detail[i].correct) $(quiz.children()[0]).addClass('incorrect');
-                        quiz.children()[2].innerText = solve.detail[i].userInput;
-                    }
-                    else {//풀지 않은 문항은 틀린것으로 
-                        $(quiz.children()[0]).addClass('incorrect');
-                    }
-                }
-                printEntrance(); //입장기록 출력
-            });
-        }
-        if(solve) {
-            if(solve.time){
-                const solveTime = `제출일 : ${new Date(solve.time).toLocaleString()}`;
-                box().appendTo(target).text(solveTime).textColor('white').padding(5).textAlign('left');
-            }
-            if(!totalCourse) {
-                getCourseData(function(totalcourse) {
-                    totalCourse = totalcourse;
-                    const quizId = totalCourse[crs].quiz[quizData.type];
-                    printSheet(quizId);
-                });
-            }
-            else {
-                const quizId = totalCourse[crs].quiz[quizData.type];
-                printSheet(quizId);
-            }
-        } 
-    }
-
-    /**
-     * 퀴즈교재 id로 퀴즈 정답 배열 가져오기
-     * @param {*} crs 
-     * @param {*} bookId 
-     * @param {*} fn 
-     */
-    function checkQuizAnswer(crs, bookId, fn) {
-        $.ajax({url: `./lecture/${crs}/${bookId}/${bookId}.json`, dataType: "json"})
-            .done((json) => {
-                const pageData = json.pages;
-                let page = pageData[0]; //퀴즈교재는 단일 페이지
-                let pageId = Object.keys(page)[0];
-                let content = page[pageId].content; // 제목포함 교재 컨텐츠 배열
-                let answers = content.map(o => o.answer);
-                if(fn) fn(answers);
-        })
-        .fail((xhr, status, error) => {})
     }
 
     // 챕터별 진도 체크해서 표시해주기

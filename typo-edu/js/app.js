@@ -1,174 +1,128 @@
-toastr.options = {
-    closeButton: true,
-    progressBar: true,
-    showMethod: 'slideDown',
-    timeOut: 4000,
-    positionClass: "toast-top-full-width"
-};
 (function(){
     initDatabase();
     let padBg, courseData, userData, homepage, curProgress, diff, diffDay;
     let bookData = {};
-    
-    const mid = new URLSearchParams(location.search).get('p_userid');
-    const crs = new URLSearchParams(location.search).get('p_cpsubj');
-    let groupId = new URLSearchParams(location.search).get('bid');
-    const crsStart = new URLSearchParams(location.search).get('edustart');
-    
-    // index 페이지에서만 화면생성 
-    if(!location.pathname.includes('admin') && !location.pathname.includes('makeroom') && !location.pathname.includes('makeBook')) { 
-        diff = calcEndDate() - new Date();
-        diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
-
-        if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
-            groupId = 'lotte';
-        }
-
-        getUserData(mid, function(data) {
-            userData = data;
-            //입과 대상인지 확인
-            getEnroll(groupId, function(result) { 
-                if(result) {
-                    const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
-                    if(Object.keys(userData).length == 0) { //신규
-                        userData = {
-                            groupId : groupId,
-                            mid: mid,
-                            name: result.userNm,
-                            course : {}
-                        };
-                        userData.course[crs] = {
-                            edustart: crsStart,
-                            courseCd: result.courseCd,
-                            courseCsNo : result.courseCsNo,
-                            time: Date.now()
-                        };
-                    }
-                    else if(courseData && courseData.edustart == crsStart){ //계속 학습
-                        if(!courseData.courseCd || !courseData.courseCsNo) {
-                            userData.course[crs].courseCd = result.courseCd;
-                            userData.course[crs].courseCsNo = result.courseCsNo;
-                            updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
-                        }   
-                        init();
-                        return;
-                    }
-                    else if(courseData && courseData.edustart != crsStart){ //재수강 있을 수 없음
-                        const retake = confirm('재수강입니다. 학습을 시작하기 위해 이전 학습 기록이 삭제됩니다.');
-                        if(retake){ // 재수강 기록삭제시. 결과전송 데이터도 삭제? 
-                            userData.course[crs] = { //코스데이터 초기화
-                                edustart: crsStart,
-                                courseCd: result.courseCd,
-                                courseCsNo : result.courseCsNo,
-                                time: Date.now()
-                            };
-                            delete courseData.quiz;
-                            updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
-                            init();
-                        }
-                        return;
-                    }
-                    else { // 같은 기간에 2개 과정 추가 수강
-                        userData.course[crs] = {
-                            edustart: crsStart,
-                            courseCd: result.courseCd,
-                            courseCsNo : result.courseCsNo,
-                            time: Date.now()
-                        };
-                    }
-                    putUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function() {
-                        init();
-                    });
-                }
-                else { //입과리스트에 없는
-                    toastr.error('잘못된 접근입니다.');
-                }
-            });
-        });
+    if(location.search.length < 5) {
+        return;
     }
 
-    window.calcProgress = calcProgress;
-    window.getBook = getBook;
-    window.getJsonData = getJsonData;
-    window.updateUserData = updateUserData;
-    window.getUserData = getUserData;
-    window.putUserData = putUserData;
-    window.courseData = courseData;
+    if(!location.search.includes('eq')) { // 쿼리스트링 암호화되지 않은 경우
+        const queryStr = location.search.slice(1); // '?' 이후 문자열
+        const encoded = btoa(queryStr);
+        location.search = 'eq=' + encoded;
+    }
+
+    const decoded = atob(location.search.slice(4)); //'?eq=' 이후 문자열
+    const params = decoded.split('&');
+    const searchParams = (arr, keyword) => {
+        const exist = arr.filter(el => el.includes(keyword))[0];
+        if(exist){
+            return exist.split('=')[1];
+        }
+        else {
+            return false;
+        }
+    };
+
+    // IE 접속의 경우 크롬접속 안내
+    var agent = navigator.userAgent.toLowerCase();
+    if ( (navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1) || (agent.indexOf("msie") != -1) ) {
+        let iframe = document.createElement('iframe');
+        iframe.src = './recommended.html';
+        iframe.style.width = '100%';
+        iframe.style.height = '100vh';
+        document.querySelector('#mainapp').appendChild(iframe);
+        toastr.error('지원하지 않는 브라우저 입니다.<br>크롬이나 엣지 브라우저에서 접속하세요.');
+        return;
+    }
+
+    const mid = searchParams(params, 'p_userid');
+    const crs = searchParams(params, 'p_cpsubj');
+    let groupId = searchParams(params, 'bid');
+    const crsStart = searchParams(params, 'edustart');
+
+    // history.replaceState({}, null, location.pathname);
+    diff = calcEndDate(crsStart) - new Date();
+    diffDay = Math.floor(diff / (1000*60*60*24)) + 1;
+
+    if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
+        groupId = 'lotte';
+    }
+
+    getUserData({groupId:groupId, crsStart:crsStart, mid:mid}, function(data) {
+        userData = data;
+        //입과 대상인지 확인
+        getEnroll(groupId, function(result) { 
+            if(result) {
+                const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
+                if(Object.keys(userData).length == 0) { //신규 
+                    userData = {
+                        groupId : groupId,
+                        mid: mid,
+                        name: result.userNm,
+                        course : {}
+                    };
+                    userData.course[crs] = {
+                        edustart: crsStart,
+                        courseCd: result.courseCd,
+                        courseCsNo : result.courseCsNo,
+                        time: Date.now()
+                    };
+                }
+                else if(courseData && courseData.edustart == crsStart){ //계속 학습
+                    if(!courseData.courseCd || !courseData.courseCsNo) {
+                        userData.course[crs].courseCd = result.courseCd;
+                        userData.course[crs].courseCsNo = result.courseCsNo;
+                        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+                    }   
+                    init();
+                    return;
+                }
+                else if(courseData && courseData.edustart != crsStart){ //재수강 있을 수 없음
+                    const retake = confirm('재수강입니다. 학습을 시작하기 위해 이전 학습 기록이 삭제됩니다.');
+                    if(retake){ // 재수강 기록삭제시. 결과전송 데이터도 삭제? 
+                        userData.course[crs] = { //코스데이터 초기화
+                            edustart: crsStart,
+                            courseCd: result.courseCd,
+                            courseCsNo : result.courseCsNo,
+                            time: Date.now()
+                        };
+                        delete courseData.quiz;
+                        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+                        init();
+                    }
+                    return;
+                }
+                else { // 같은 기간에 2개 과정 추가 수강
+                    userData.course[crs] = {
+                        edustart: crsStart,
+                        courseCd: result.courseCd,
+                        courseCsNo : result.courseCsNo,
+                        time: Date.now()
+                    };
+                }
+                putUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function() {
+                    init();
+                });
+            }
+            else { //입과리스트에 없는
+                toastr.error('잘못된 접근입니다.');
+            }
+        });
+    });
+
     window.mid = mid;
     window.crsStart = crsStart;
     window.crs = crs;
-    window.isTakingClass = isTakingClass;
-    window.calcEndDate = calcEndDate;
-    window.getLotteEntrance = getLotteEntrance;
-    /**
-     * 학습기간별 데이터에서 학습자 데이터 가져오기
-     * @param {*} mid - 학습자 아이디
-     * @param {*} fn 
-     * @returns 
-     */
-    function getUserData(mid, fn) {
-        if(!mid) {
-            if(fn) fn(null);
-            return;
-        }
-
-        const read = (callback) => {
-            BX.db.firestore().collection('lecture').doc(groupId)
-                             .collection('monthly').doc(crsStart.substring(0, 6))
-                             .collection('members').doc(mid)
-                             .get()
-                             .then(callback)
-                             .catch(callback);
-        };
-        
-        read(function(doc) {
-            if(fn && doc.exists) fn(doc.data());
-            else fn({});
-        });
-    }
-    /**
-     * 학습자 데이터 저장
-     * @param {*} data - groupId, crsStart, mid, data 값을 필수로 가지는 json
-     * @param {*} fn 
-     */
-    function putUserData(data, fn) {
-        const write = (callback) => {
-            BX.db.firestore().collection('lecture').doc(data.groupId)
-                             .collection('monthly').doc(data.crsStart.substring(0, 6))
-                             .collection('members').doc(data.mid)
-                             .set(data.data)
-                             .then(callback)
-                             .catch(callback);
-        };
-        write(function(result) {
-            if(fn) fn(result);
-        });
-    }
-    /**
-     * 학습자 데이터 업데이트
-     * @param {*} data - groupId, crsStart, mid, data 값을 필수로 가지는 json
-     * @param {*} fn 
-     */
-    function updateUserData(data, fn) {
-        const update = (callback) => {
-            BX.db.firestore().collection('lecture').doc(data.groupId)
-                             .collection('monthly').doc(data.crsStart.substring(0, 6))
-                             .collection('members').doc(data.mid)
-                             .update(data.data)
-                             .then(callback)
-                             .catch(callback);
-        }
-        update(function(result) {
-            if(fn) fn(result);
-        });
-    }
+    
     /**
      * 페이지 초기화
      */
     function init() {
-        getJsonData("./lecture/course.json", json => {
-            courseData = json;
-            calcProgress(crs, userData, function(result){
+        getCrsBookData(crs, function(json) {
+            courseData = json.courseData;
+            bookData = json.bookData;
+            calcProgress(courseData, bookData, crs, userData, function(result){
                 curProgress = result;
                 homepage = BX.component(main.bg).appendTo(topBox);
                 const bg = BX.component(main.pad).appendTo(homepage);
@@ -201,7 +155,7 @@ toastr.options = {
                 }
                 
                 if(location.hash == '#list') {
-                    calcProgress(crs, userData, (result) => {
+                    calcProgress(courseData, bookData, crs, userData, (result) => {
                         curProgress = result;
                         openStepList();
                     });
@@ -219,29 +173,17 @@ toastr.options = {
     }
 
     /**
-     * 교재 생성 데이터 가져오기
-     * @param {*} cid - 코스id
-     * @param {*} bid - book id
-     * @param {*} fn 
-     */
-    function getBook(cid, bid, fn) {
-        $.ajax({url: `./lecture/${cid}/${bid}/${bid}.json`, dataType: "json"})
-        .done((json) => {
-            if(fn) fn(json);
-        })
-        .fail((xhr, status, error) => {})
-    }
-    /**
-     * josn 파일 읽기
-     * @param {*} src 
-     * @param {*} fn 
-     */
-    function getJsonData(src, fn) {
-        $.ajax({url: src, dataType: "json"})
-        .done((json) => {
-            if(fn) fn(json);
-        })
-        .fail((xhr, status, error) => {});
+         * 롯데이지러닝 입과일 기준 입과리스트 가져오기
+         * @param {*} crsStart - yyyymmdd
+         * @param {*} crsEnd - null이면 crsStart기준 말일로 자동 설정
+         * @param {*} fn 
+         */
+    function getLotteEntrance(crsStart, crsEnd, fn) {
+        if(!crsEnd) crsEnd = YYYYMMDD(calcEndDate(crsStart));
+        $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
+            result = result.data.enrollment;
+            fn(result);
+        });
     }
 
     /**
@@ -269,7 +211,8 @@ toastr.options = {
             }
             const openQuizPage = (qid, type) => {
                 window.location.hash = '';
-                window.location.href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&book=${qid}&q=${type}&page=`;
+                const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&book=${qid}&q=${type}&page=`;
+                window.location.href = `makeroom.html?eq=${btoa(queryStr)}`;
             }
 
             if(Object.keys(quizRecord).length == 0) { // 퀴즈 응시조건 체크
@@ -318,16 +261,7 @@ toastr.options = {
             }
         }
     }
-    /**
-     * 현재 시점이 수강기간에 해당하는지 체크
-     * @param {string} yyyymmdd - edustart
-     * @returns - true or false
-     */
-    function isTakingClass(yyyymmdd) {
-        const today = new Date();
-        const thisDay = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2, '0')}01`
-        return yyyymmdd == thisDay;
-    }
+    
     /**
      * 학사모 아이콘 클릭이벤트 - 내 강의 목록 생성 : 진도확인
      */
@@ -370,7 +304,7 @@ toastr.options = {
                         let pageDone = 0;
                         for(var i=0; i<pageData.length; i++) {
                             let pid = Object.keys(pageData[i])[0];
-                            totalRequired += getContentsId(bid, pid).length;
+                            totalRequired += getContentsId(bookData, bid, pid).length;
 
                             const userBookData = userData && userData.course[cid] && userData.course[cid].progress ? userData.course[cid].progress[bid] : null;
                             const studyData = userBookData && userBookData[pid] ? 
@@ -410,24 +344,25 @@ toastr.options = {
                     else if(bookCount == books.length-1){
                         $(coursebox).find('.totalProgress')[0].innerText = `학습진도 0%`;
                     }
-                    
 
                     if(lastPage == null) lastPage = 1; //완료한 페이지가 없는 경우
                     //순차적인 학습을 위한 교재 열람조건 체크
                     let chapCompeleteProgress = (((bookCount + 1) / 24) * 100).toFixed(2);
-
-                    if(curProgress == 100) {
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                    
+                    const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                    const encoded = `makeroom.html?eq=${btoa(queryStr)}`;
+                    if(curProgress == 100) { //
+                        $(line).find('a')[0].href = encoded;
                     }
                     else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
                     else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                        $(line).find('a')[0].href = encoded;
                     } 
                     else if(curProgress >= chapCompeleteProgress){
-                        $(line).find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
+                        $(line).find('a')[0].href = encoded;
                     }
                     else {
                         $(line).find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
@@ -455,87 +390,6 @@ toastr.options = {
         
         // 남은 수강일 D-day 표시   
         $('.deadline')[0].innerText = `D${diffDay < 0 ? '+' : '-'}${Math.abs(diffDay)}`;
-    }
-    /**
-     * 전체 학습진도율 계산
-     * @param {*} crs - 과정코드
-     * @param {*} books - 교재 데이터
-     * @param {*} userData - 학습자 데이터
-     * @param {*} fn 
-     */
-    function calcProgress(crs, userData, fn) {
-        const books = courseData ? courseData[crs].books : window.courseData[crs].books;
-        let totalProgress = 0;
-        let count = 0;
-        //교재별 진도 계산
-        const calc = (json, o) => { 
-            count++;
-            const bid = json.id;
-            bookData[bid] = json; 
-            let progress = 0;
-            const pageData = bookData[bid].pages; // 배열 - 교재별 페이지 데이터
-            let totalRequired = 0;
-            let studied = 0;
-            
-            for(var i=0; i<pageData.length; i++) {
-                let pid = Object.keys(pageData[i])[0];
-                totalRequired += getContentsId(bid, pid).length;
-
-                const userBookData = userData && userData.course[crs] && userData.course[crs].progress ? userData.course[crs].progress[bid] : null;
-                const studyData = userBookData && userBookData[pid] ? 
-                    userBookData[pid].clicked : [];
-                
-                if(studyData){
-                    studied += studyData.length;
-                }                    
-            }
-            
-            progress = (studied / totalRequired) * 100;
-            if(isNaN(progress)) {
-                progress = 0;
-            } else if(progress > 0) {
-                progress = progress.toFixed(1);
-            }  
-            
-            totalProgress += Number(progress);
-            if(Object.keys(books).length == count) { 
-                const percent = totalProgress / books.length;
-                const total = parseFloat(percent.toFixed(2));
-                if(fn) fn(total); //전체 진도율 전달
-            }
-        }
-        Object.keys(books).forEach(function(o){
-            const targetId = books[o].id;
-            if(!Object.keys(bookData).includes(targetId)){
-                getBook(crs, targetId, json => {
-                    calc(json, o);
-                });
-            }
-            else {
-                calc(bookData[targetId], o);
-            }
-        });
-    }
-
-    /**
-     * 학습자 생성 앱 목록 생성 (pending)
-     */
-    function openAppStore() {
-        padBg.empty();
-        box().size(70,70).margin(20).borderRadius(6).border('2px solid #6F1ED8').fontSize(35).lineHeight('90%').textAlign('center').color('#E2D6FF').padding(3)
-            .text('교재\n제작').textColor('#6F1ED8').appendTo(padBg[0]).click( e => {
-                window.open(window.location.origin + '/typo-edu/makeBook.html');
-            });
-        box().size(70,70).margin(20).borderRadius(6).border('2px solid #1178D8').fontSize(35).lineHeight('90%').textAlign('center').color('#C6E9FF').padding(3)
-            .text('자유\n코딩').textColor('#1178D8').appendTo(padBg[0]).click( e => {
-                if(!mid) {
-                    toastr.error('수강 등록 후 사용가능합니다.');
-                    return;
-                }
-                window.location.hash = '';
-                window.location.href = 'makeroom.html?p_userid=' + mid;
-            });
-
     }
 
     /**
@@ -581,18 +435,20 @@ toastr.options = {
                     }
                     
                     let chapCompeleteProgress = (((bookCount+1) / 24) * 100).toFixed(2);
+                    const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                    const encoded = `makeroom.html?${btoa(queryStr)}`;
                     if(curProgress == 100) {
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = encoded;
                     }
                     else if(lastCompeleteChapter && curProgress < chapCompeleteProgress){
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
                     else if(lastCompeleteChapter == undefined && curProgress < chapCompeleteProgress) {
                         lastCompeleteChapter = bookCount;
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = encoded;
                     } 
                     else if(curProgress >= chapCompeleteProgress){
-                        app.find('a')[0].href = `makeroom.html?p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
+                        app.find('a')[0].href = encoded;
                     }
                     else {
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
@@ -622,23 +478,6 @@ toastr.options = {
     }
 
     /**
-     * 페이지별 id가 부여된 컨텐츠 id 목록 가져오기
-     * @param {string} bookid 
-     * @param {string} pageid 
-     * @returns {object} id배열
-     */
-    function getContentsId(bookid, pageid) { 
-        const totalPages = bookData[bookid].pages;
-        const targetPage = totalPages.filter( o => Object.keys(o)[0] == pageid)[0];
-        const content = targetPage[pageid].content;
-        
-        let idList = content.filter(o => o.id);
-        idList = idList.map(o => o.id);
-        
-        return idList;
-    }
-
-    /**
      * 페이지 번호로 페이지 아이디 가져오기
      * @param {*} bookid 
      * @param {*} pageNumber 
@@ -659,7 +498,7 @@ toastr.options = {
         const userBookData = userData && userData.course[courseId].progress ? userData.course[courseId].progress[bookid] : null;
         const studyData = userBookData && userBookData[pageid] ? 
             userBookData[pageid].clicked : [];
-        const compare = getContentsId(bookid, pageid); //교재에 포함된 id 목록 : 클릭되어야 할 요소
+        const compare = getContentsId(bookData, bookid, pageid); //교재에 포함된 id 목록 : 클릭되어야 할 요소
         
         let point;
         for(let id of compare) {
@@ -671,26 +510,6 @@ toastr.options = {
         
         return point == undefined;
     }
-
-    /**
-     * 날짜 데이터를 YYYYMMDD 형태로 출력
-     * @param {*} date 
-     * @returns 
-     */
-    function YYYYMMDD(date) {
-        const pad = (number, length) => {
-            var str = '' + number;
-            while (str.length < length) {
-                str = '0' + str;
-            }
-            return str;
-        }
-        var yyyy = date.getFullYear().toString();
-        var mm = pad(date.getMonth() + 1, 2);
-        var dd = pad(date.getDate(), 2);
-       
-        return yyyy + mm + dd;
-    };
 
     /**
      * 수강기간별 입과리스트에서 일치하는 학습자 데이터 전달
@@ -710,6 +529,13 @@ toastr.options = {
                     },
                     {
                         cpCourseCd : 'L018761',
+                        userNm : '김철수',
+                        userId: 'test1',
+                        courseCd : 'E187611',
+                        courseCsNo : '04',
+                    },
+                    {
+                        cpCourseCd : 'L018761',
                         userNm : '이호',
                         userId: 'test2',
                         courseCd : 'E187611',
@@ -724,7 +550,7 @@ toastr.options = {
                 }
             }
             else {
-                const crsEnd = YYYYMMDD(calcEndDate());
+                const crsEnd = YYYYMMDD(calcEndDate(crsStart));
                 getLotteEntrance(crsStart, crsEnd, function(result) {
                     const target = result.filter(o => o.userId == mid && o.cpCourseCd == crs);
                     if(target.length == 1) {
@@ -737,30 +563,4 @@ toastr.options = {
             }
         }
     }
-
-    /**
-     * 롯데이지러닝 입과일 기준 입과리스트 가져오기
-     * @param {*} crsStart - yyyymmdd
-     * @param {*} crsEnd - null이면 crsStart기준 말일로 자동 설정
-     * @param {*} fn 
-     */
-    function getLotteEntrance(crsStart, crsEnd, fn) {
-        if(!crsEnd) crsEnd = YYYYMMDD(calcEndDate());
-        $.getJSON(`https://www.realcoding.co/cest/lotte-enrollment-list?start=${crsStart}&end=${crsEnd}`, function (result) {
-            result = result.data.enrollment;
-            fn(result);
-        });
-    }
-
-    /**
-     * yyyymm 형식의 수강시작일 문자열로 
-     * @returns 
-     */
-    function calcEndDate() {
-        const eduStart = new Date(crsStart.substring(0,4), crsStart.substring(4, 6) - 1, 1);
-        return new Date(eduStart.getFullYear(), eduStart.getMonth()+1, 0);
-    }
-
 })();
-
-

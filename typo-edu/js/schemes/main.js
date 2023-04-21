@@ -29,9 +29,6 @@ const main = {
             {
                 kind:'span',
                 className: 'material-symbols-outlined',
-                // onClick: e => {
-                //     e.stopPropagation();
-                // },
                 style: {
                     width: '100%',
                     height: '100%',
@@ -49,7 +46,7 @@ const main = {
         kind: 'box',
         style: {
             width: 300,
-            margin: '20px 40px',//'20px 5px 20px 25px'
+            margin: '20px 40px',
             textAlign: 'center',
         },
         children: [
@@ -72,7 +69,6 @@ const main = {
                     textAlign: 'center',
                     fontSize:16,
                     color: '#0052A5',
-                    // lineHeight: '100%',
                     marginTop: 15
                 }
             },
@@ -240,20 +236,8 @@ const myPage = {
         children: [
             {
                 kind: 'box',
-                // onClick: e => {
-                //     if(e.target != e.currentTarget) {
-                //         e.currentTarget.click();
-                //         return;
-                //     }
-                     
-                //     $(e.target).next().slideToggle(500, () => {
-                //         const target = $(e.target).children()[0];
-                //         target.innerText = target.innerText == 'arrow_right' ? 'arrow_drop_down' : 'arrow_right';
-                //     });
-                // },
                 style: {
                     padding: '6px 10px 0px 10px',
-                    // borderBottom: '1px solid white',
                     background: 'lightgray'
                 },
                 children: [
@@ -265,7 +249,7 @@ const myPage = {
                     {
                         kind: 'box',
                         className: 'courseTitleText',
-                        text: '그래머과정', //
+                        text: '과정명', //
                         style: {
                             width: 'auto',
                             fontSize: 16,

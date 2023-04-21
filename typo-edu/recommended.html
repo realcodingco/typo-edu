@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head></head>
+<body>
+    <div style="width: 100%;height: 100%;position: fixed;left: 0;top: 0;background: rgba(7,51,48,0.9);text-align: center;
+    padding: 30px;font-family: 'GmarketSans', sans-serif;color: white;">
+        <h1 style="color: red;margin: 100px 0px 60px 0px;">현재 브라우저에서는<br>일부 기능이 정상 동작하지 않습니다</h1>
+        <span style="font-size: 23px;font-weight: 100;">최적화된 학습을 위해 <font color=#EEFFA3><b>크롬</b>이나 <b>엣지</b> 브라우저</font>에서 다음의 링크로 접속하시기 바랍니다</span>
+        <input name="clip" style="padding: 20px;width: 80%;margin-top: 40px;text-align: center;font-size: 15px;outline: none;border-radius: 10px;border-style: solid;cursor: pointer;" readonly>
+        <p style="color: gray;margin-top: 20px;">클릭하면 주소가 클립보드로 복사됩니다</p>
+    </div>
+    <script>
+        let inputEl = document.querySelector('input');
+        inputEl.addEventListener('click', function(e){
+            console.log('click');
+            const copied = e.target.value; 
+            if(window.navigator.clipboard) {
+                window.navigator.clipboard.writeText(copied);
+            }
+            else {
+                inputEl.select();
+                document.execCommand('copy');
+                parent.toastr.info('클립보드로 복사되었습니다.');
+            }
+        });
+        inputEl.value = parent.location.href;
+    </script>
+</body>
+</html>

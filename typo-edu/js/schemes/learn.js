@@ -109,7 +109,8 @@ const learn = {
                         text: 'other_houses',
                         className: 'material-symbols-outlined homeicon',
                         onClick: e => {
-                            location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                            location.href = `index.html?eq=${btoa(queryStr)}`;
                         }
                     },
                     {
@@ -493,8 +494,9 @@ const learn = {
                                 kind: 'span',
                                 className: 'material-symbols-outlined listbtn',
                                 text : 'apps',
-                                onClick: e => {    
-                                    location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#list`;
+                                onClick: e => {   
+                                    const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                                    location.href = `index.html?eq=${btoa(queryStr)}#list`;
                                 },
                                 children: [
                                     {

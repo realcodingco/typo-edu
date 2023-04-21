@@ -1,8 +1,17 @@
 /**
  * 메인페이지에서 step 선택 후 열리는 학습 화면 : 교재, 에디터, 에뮬레이터
  */
-var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 않도록
+var bookReady = false; // 학습기록 표시할 때 사운드가 재생되지 않도록
+let typingCount = 0;
+let typingStart = false;
+let typingTime, record;
+let clickedRunBtn = false;
 (function() {
+    initDatabase();
+    let userData, emulator, editSection, pageData, timer;
+    let courseData, lecBooks;
+    let autoSubmit; // 퀴즈자동제출 여부.
+
     const setVh = () => { // 교재영역 접고 열때 화면위로 밀리는 현상 대응
         document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
         document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
@@ -10,32 +19,42 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     window.addEventListener('resize', setVh);
     setVh();
 
-    const params = new URLSearchParams(location.search);
-    const crs = params.get('p_cpsubj');
-    const bookId = params.get('book'); 
-    const groupId = params.get('bid'); 
-    const page = params.get('page');
-    const quiz = params.get('q');
-    const crsStart = params.get('edustart');
-    let typingCount = 0;
-    let typingStart = false;
-    let typingTime;
-    let userData, record, emulator, editSection, pageData, timer;
-    let autoSubmit; // 자동제출 여부.
+    const decoded = atob(location.search.slice(4));
+    const params = decoded.split('&');
+    const searchParams = (arr, keyword) => {
+        const exist = arr.filter(el => el.includes(keyword))[0];
+        if(exist){
+            return exist.split('=')[1];
+        }
+        else {
+            return false;
+        }
+    };
 
-    if(location.pathname.includes('makeroom')) { // makeroom 페이지에서만 화면생성
-        getJsonData("./lecture/course.json", json => {
-            window.courseData = json;
-            init();
-        });
-    }
+    const crs = searchParams(params, 'p_cpsubj');
+    const mid = searchParams(params, 'p_userid');
+    const bookId = searchParams(params, 'book'); 
+    const groupId = searchParams(params, 'bid'); 
+    const page = searchParams(params, 'page');
+    const quiz = searchParams(params, 'q');
+    const crsStart = searchParams(params, 'edustart');
+
+    window.crs = crs;
+    window.mid = mid;
+    window.crsStart = crsStart;
+
+    getCrsBookData(crs, function(json) {
+        courseData = json.courseData;
+        lecBooks = json.bookData;
+        init();
+    });
 
     function init(){
         if(!mid) {
             toastr.error('접근 권한이 없습니다.');
             return;
         }
-        getUserData(mid, function(data) {
+        getUserData({groupId:groupId, crsStart:crsStart, mid:mid}, function(data) {
             userData = data; 
             record = Object.keys(userData).length != 0 ? userData.course[crs] : null;
             if(!record) {
@@ -62,15 +81,20 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                         
                         userData.course[crs].quiz.testTime = restTime;
                         updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function(){
-                            location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#`;
+                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                            location.href = `index.html?eq=${btoa(queryStr)}#`;
                         });
-                    } else {
-                        location.href = `index.html?p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}#`;
+                    } 
+                    else {
+                        const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                        location.href = `index.html?eq=${btoa(queryStr)}#`;
                     }
                 };
                 const quizGuide =BX.component(learn.quizGuide).appendTo(topBox);
                 // 팝업 시작하기 버튼 클릭이벤트 
                 quizGuide.find('button')[0].onclick = openQuiz;
+                window.checkedExample = checkedExample;
+                window.submitQuiz = submitQuiz;
             }
             else {
                 BX.component(learnWindow.main).appendTo(topBox); // 에디터, 에뮬레이터
@@ -82,7 +106,9 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 $('.editSection .fn-btn > :contains("play_arrow")')[0].onclick = runApp; //실행 버튼
                 window.consoleDiv = consoleDiv;
                 window.saveUserData = saveUserData;
-                window.openPractice = openPractice;
+                window.finishChapter = finishChapter;
+                window.runApp = runApp;
+                
                 setTimeout(e => { //(타수-백스페이스*3) / 경과시간(초) * 60초
                     $('.aceEditor')[0].onkeypress = e => { //
                         if(!typingStart) {
@@ -234,414 +260,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     }
 
     /**
-     * 유형별 컨텐츠 컴포넌트 생성
-     * @param {object} unit 컴포넌트 데이터
-     * @returns 컨텐츠 컴포넌트 box
-     */
-    function createComponent(unit) {
-        let result;
-        const enter = '%250A';
-        const plus = '%252B';
-        const component = unit.comp;
-        if(component == 'check') { // 체크상자
-            let txt = unit.text;
-            if(unit.style) {
-                for(let style of unit.style) {
-                    txt = txt.replace(style.target, `<font style="${style.type}">${style.target}</font>`);
-                }
-            }
-
-            result = BX.component(lesson.check);
-            result.children()[0].innerHTML = txt;
-            
-            if(unit.id) {
-                result.children()[1].id = unit.id;
-            }
-        } 
-        else if(component == 'completeBtn') { // 교재 마지막 페이지 학습완료 버튼 컴포넌트
-            result = BX.component(lesson.completeBtn);
-            if(unit.id) {
-                result.children()[1].id = unit.id;
-            }
-            result.find('.complete_check')[0].onclick = finishChapter;
-        }
-        else if(component == 'title') { //제목
-            result = BX.component(lesson.title).text(unit.text);
-        }
-        else if(['text', 'sub', 'sup'].includes(component)) { //텍스트
-            let txt = unit.text;
-            if(unit.style) {
-                txt = unit.text;
-                for(let style of unit.style) {
-                    txt = txt.replace(style.target, `<font style="${style.type}">${style.target}</font>`);
-                }
-            }
-
-            result = BX.component(lesson[component]).html(txt);
-        }
-        else if(component == 'par') { //문단, 가운데정렬
-            let enteredTxt = unit.text.replaceAll('\n', '<br>');
-
-            const txt = `<p style="${unit.style}">${enteredTxt}</p>`
-            result = BX.component(lesson.par).html(txt);
-        }
-        else if(component == 'link') { // 링크 : 새창열기
-            result = BX.component(lesson.link);
-            const aTag = result.find('a')[0];
-            aTag.href = unit.src;
-            aTag.innerText = unit.text;
-            aTag.style = unit.linkstyle;
-        }
-        else if(component == 'codeBox') { //카본 코드상자 (미사용)
-            let code = unit.text.replaceAll('\n', enter);
-            code = code.replaceAll('+', plus);
-            const src = `https://carbon.now.sh/embed?bg=rgba%28171%2C184%2C195%2C0%29&t=material&wt=bw&l=javascript&ds=false&dsyoff=7px&dsblur=57px&wc=${unit.tab}&wa=false&pv=0px&ph=28px&ln=true&fl=${unit.start}&fm=JetBrains+Mono&fs=18px&lh=141%25&si=false&es=1x&wm=false&code=${code}`;
-            const frame = BX.component(lesson.codeBox).height(unit.height);
-            frame[0].src = src; 
-            result = frame;  
-        }
-        else if(component == 'aceEditor') { //에디터
-            result = BX.component(lesson.aceEditor).height(unit.height);
-            const drawCode = (result, unit) => {
-                let code = unit.text;
-                const editor = result.children()[0].aceEditor;
-                editor.setValue(code); 
-                editor.clearSelection();
-                editor.setReadOnly(true);
-                editor.renderer.$cursorLayer.element.style.opacity = 0; //커서 감추기
-                if(unit.start) editor.setOption("firstLineNumber", unit.start * 1);
-            }
-            setTimeout(() => {
-                drawCode(result, unit);
-            }, 500);
-        } 
-        else if(component == 'direction') { // 단순 에디터 열기
-            const bgCode = unit.bgCode;
-            const title = unit.title;
-            const codeId = unit.codeId;
-            const targetLine = unit.targetLine;
-            const bg = BX.component(lesson.direction);
-            bg.children()[0].innerHTML = unit.text;
-            bg.children()[1].onclick = e => {
-                //에디터 열어주기.
-                if(e.target.value == '에디터 열기') {
-                    typingCount = 0;
-                    typingStart = false;
-                    $('.lessonBook').next().hide();
-                    // location.hash = '';
-                    const editor =  $('.ace_editor')[0].aceEditor;
-                    if(bgCode || bgCode == 'clear') {
-                        editor.setValue(bgCode);
-                        if(targetLine) editor.gotoLine(targetLine);
-                    } else {
-                        editor.setValue('');
-                        editor.gotoLine(1);
-                    }
-                    
-                    if(title) { // 에디터 제목 삽입
-                        $('.appTitle')[0].innerText = title;
-                    }
-
-                    if(codeId) {
-                        $('.appTitle')[0].id = codeId;
-                        // pageId 전달
-                        const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
-                        $('.appTitle')[0].dataset.pid = pageId;
-                        if(record.progress && record.progress[bookId]) {
-                            const pageRecord = record.progress[bookId][pageId];
-                            if(pageRecord && pageRecord.code) {
-                                if(pageRecord.code[codeId]) {
-                                    const codeRecord = pageRecord.code[codeId].code;
-                                    editor.setValue(codeRecord);
-                                    editor.navigateFileEnd(); //커서는 마지막 라인으로 
-                                }
-                            }
-                        }
-                    }
-
-                    $('.lessonWindow').addClass('half');
-                    e.target.scrollIntoView({block:'start'});
-                    setTimeout(() => {
-                        $('.lessonBook')[0].style.overflowY = 'hidden';
-                        e.target.value = 'DONE';
-                        editor.focus();
-                        adjustScroll(e.target);
-                    }, 500);
-                }
-                else {
-                    $('.typingCount')[0].innerText = '';
-                    $('.lessonWindow').removeClass('half');
-                    $('.lessonBook')[0].style.overflowY = 'auto';
-                    $('.consolewindow').removeClass('open'); // 콘솔창 닫기
-                    setTimeout(() => {
-                        $('.lessonBook').next().show();
-                        
-                        e.target.scrollIntoView({block:'start'});
-                        e.target.value = '에디터 열기';
-                        consoleDiv.empty();
-                    }, 500);
-                }
-            }
-            result = bg;
-        }
-        else if(component == 'table') { //표
-            const table = BX.component(lesson.table);
-            table[0].style.gridTemplateColumns = `repeat(${unit.column}, 1fr)`;
-            for(let el of unit.arr) {
-                box().appendTo(table).text(el).border('0.5px solid lightgray').fontSize(15).color('white').align('center');
-            }
-            result = table;
-        }
-        else if(component == 'tableFH') {
-            result = BX.component(lesson.tableFixedHeader).width(unit.width).marginLeft(`calc((100% - ${unit.width}px) / 2)`);
-            $(result).find('.tblContent')[0].style.height = `${unit.height}px`;
-            const head = unit.headarr.split(',');
-            const content = unit.arr.split(',');
-            const column = Number(unit.column);
-            let targetRow;
-            for(let i=0; i<content.length; i++) {
-                if(i % column == 0) {
-                    targetRow = document.createElement('tr');
-                    $(result).find('tbody')[0].appendChild(targetRow);
-                }
-                const td = document.createElement('td');
-                targetRow.appendChild(td);
-                td.innerText = content[i];
-            }
-            for(let h=0; h<head.length; h++) {
-                const th = document.createElement('th');
-                const target = $(result).find('thead tr')[0];
-                target.appendChild(th);
-                th.innerText = head[h];
-            }
-        }
-        else if(component == 'tableHVH') {
-            result = BX.component(lesson.tableHorizontalVerticalHighlight).width(unit.width).marginLeft(`calc((100% - ${unit.width}px) / 2)`);
-            const content = unit.arr.split(',');
-            const column = Number(unit.column);
-            let targetRow;
-            for(let i=0; i<content.length; i++) {
-                if(i % column == 0) {
-                    targetRow = document.createElement('tr');
-                    $(result).find('tbody')[0].appendChild(targetRow);
-                }
-                const td = document.createElement('td');
-                targetRow.appendChild(td);
-                td.innerText = content[i];
-            }
-            
-        }
-        else if(component == 'appBtn') { // 앱보기 
-            const compName = unit.compName;
-            const btn = BX.component(lesson.appBtn);
-            btn[0].value = `${compName} 앱 보기`;
-            btn[0].onclick = e => {
-                $('.emulator')[0].style.display = 'block';
-                $('.appWindow').empty();
-                BX.components[compName].bx().appendTo($('.appWindow')[0]);
-            }
-            result = btn;
-        }
-        else if(component == 'practiceDirection') { // 실습 에디터 열기 버튼
-            const targetApp = unit.targetApp;
-            const codeId = unit.codeId;
-            const targetLine = unit.targetLine;
-            const bg = BX.component(lesson.practiceDirection);
-            bg.children()[0].innerHTML = unit.text;
-            bg.children()[1].onclick = e => {
-                if(e.target.value == '에디터 열기') {
-                    typingCount = 0;
-                    typingStart = false;
-                    $('.lessonBook').next().hide();
-                    location.hash = targetApp;
-                    openPractice(targetApp, unit.title, unit.bgCode);
-                    const editor =  $('.ace_editor')[0].aceEditor;
-                    if(targetLine) editor.gotoLine(targetLine);
-
-                    if(codeId) {
-                        $('.appTitle')[0].id = codeId;
-                        // pageId 전달
-                        const pageId = $($(e.target).parents()[1]).find('.pageidtag')[0].innerText;
-                        $('.appTitle')[0].dataset.pid = pageId;
-
-                        if(record.progress && record.progress[bookId]) {
-                            const pageRecord = record.progress[bookId][pageId];
-                            if(pageRecord && pageRecord.code) {
-                                if(pageRecord.code[codeId]) {
-                                    const codeRecord = pageRecord.code[codeId].code;
-                                    editor.setValue(codeRecord);
-                                    editor.navigateFileEnd(); //커서는 마지막 라인으로 
-                                }
-                            }
-                        }
-                    }
-                    
-                    $('.lessonWindow').addClass('half');
-                    e.target.scrollIntoView({block:'start'});
-                    setTimeout(() => {
-                        e.target.value = 'DONE';
-                        editor.focus();
-                        $('.lessonBook')[0].style.overflowY = 'hidden';
-                        adjustScroll(e.target);
-                    }, 500);
-                }
-                else {
-                    $('.typingCount')[0].innerText = '';
-                    $('.lessonWindow').removeClass('half');
-                    $('.lessonBook')[0].style.overflowY = 'auto';
-                    $('.consolewindow').removeClass('open'); // 콘솔창 닫기
-                    setTimeout(() => {
-                        $('.lessonBook').next().show();
-                        e.target.scrollIntoView({block:'start'});
-                        e.target.value = '에디터 열기';
-                        consoleDiv.empty();
-                    }, 500);
-                } 
-            }
-            result = bg;
-        }
-        else if(component == 'ending') { // 마지막 엔딩 배너
-            result = BX.component(lesson.ending);
-        } 
-        else if(component == 'postit') {
-            result = BX.component(lesson.postit);
-            result[0].innerHTML = unit.text.replaceAll('\n', '<br>');
-        }
-        else if(component == 'image') {
-            const img = BX.component(lesson.imageBox);
-            img.children()[0].style.width = unit.width.includes('%') ? unit.width : `${unit.width}px`;
-            img.children()[0].src = unit.src.replace('9627cb42', 'L018761');
-            result = img;
-        }
-        else if(component == 'hidebox') {
-            const hideEl = BX.component(lesson.hideBox);
-            hideEl.children()[0].innerText = unit.text;
-            if(unit.id) {
-                hideEl.children()[0].id = unit.id;
-            }
-            result = hideEl;
-        }
-        else if(component == 'quiz') { // 교재내 퀴즈팝업
-            result = BX.component(lesson.quiz);
-            
-            let num = 1;
-            const showQuiz = function() {
-                const quizData = unit.quiz[num-1];
-                const inputBox = result.find('input')[0];
-                inputBox.value = '';
-                inputBox.style.color = 'black';
-                result.find('.quizbutton')[0].name = quizData.id;
-                result.find('.quizPopup')[0].id = quizData.id;
-                result.find('.quizQuestion').prev()[0].innerText = `${num} / ${unit.quiz.length}`;
-                result.find('.quizQuestion')[0].innerHTML = quizData.question.replaceAll('\n', '<br>');
-                if(quizData.type == 'multiple') { //객관식인 경우
-                    $(inputBox).hide();
-                    result.find('.quizExamples').show();
-                    const sheet = result.find('.quizExamples')[0];
-                    $(sheet).empty();
-                    for(let i in quizData.example) {
-                        const no = i * 1 + 1;
-                        const exLine = BX.component(lesson.quizExample).appendTo(sheet);
-                        exLine.children()[0].innerText = `(${no})`;
-                        exLine.children()[1].innerHTML = `${quizData.example[i].replaceAll('\n', '<br>')}`;
-                    }
-                } 
-                else if(quizData.type == 'short') { //주관식인 경우
-                    $(inputBox).show();
-                    result.find('.quizExamples').hide();
-                }
-
-                $('.quizExample').removeClass('show');
-                const answer = quizData.answer;
-                
-                //퀴즈 팝업에서 제출버튼 클릭이벤트
-                result.find('.quizSubmitBtn')[0].onclick = e => {
-                    const submitted = quizData.type == 'multiple' ? 
-                    $('.quizExample.checked').index() + 1 : $(e.target).prev()[0].value;
-                    const quizPopup = result.find('.quizPopup')[0];
-                    const resultSheet = BX.component(lesson.quizResult).appendTo(quizPopup);
-                    // 정답체크
-                    if(answer == submitted) {
-                        resultSheet.color('blue');
-                        resultSheet.children()[0].innerText = '정답';
-                    }
-                    else {
-                        resultSheet.color('red');
-                        resultSheet.children()[0].innerText = '오답';
-                        //정답 표시하기
-                        if(quizData.type == 'multiple') {
-                            $(`.quizExample:nth-child(${answer * 1})`).addClass('show');
-                        }
-                        else if(quizData.type == 'short') {
-                            inputBox.value = answer;
-                            inputBox.style.color = 'blue';
-                        }
-                    }
-                    if(num < unit.quiz.length) {
-                        toastr.success('2초 뒤에 다음 문제가 출제됩니다.', '', {timeOut: 2000});
-                    } else {
-                        toastr.success('마지막 문항입니다.<br>곧 창이 닫힙니다.');
-                        setTimeout(()=>{$('.quizPopup').removeClass('on');}, 3000);
-                    }
-                    // 학습페이지 퀴즈 풀이 학습기록 하지 않음
-                    setTimeout(() => { //정답,오답 알림 제거 후 다음 문제 생성
-                        resultSheet.remove();
-                        if(num >= unit.quiz.length) {
-                            num = 1;
-                        }
-                        else {
-                            num++;
-                            showQuiz();
-                        }
-                    }, 2000);
-                }
-                $('.quizpaper').scrollTop(0);
-            }
-            result.find('.quizbutton')[0].onclick = e => {
-                showQuiz();
-                $(`#${e.target.name}`).addClass('on');
-            }
-        }
-        else if(component == 'quizQuestion') { // 응시용 퀴즈교재 컴포넌트
-            const bg = box();
-            const quest = BX.component(lesson[component]).appendTo(bg);
-            quest.children()[0].innerText = unit.quizNo + '.';
-            quest.children()[1].innerHTML = unit.question;
-
-            const exp = BX.component(lesson['finalQuizExample']).appendTo(bg);
-            const examples = unit.example;
-            for(var i=0; i<examples.length; i++) {
-                const bogi = BX.component(lesson['finalExp']).text(`(${i+1}) ${examples[i]}`).appendTo(exp);
-                bogi[0].dataset.no = i+1;
-                bogi[0].dataset.q = unit.quizNo;
-                bogi[0].onclick = checkedExample;
-            }
-
-            result = bg;
-        }
-        else if(component == 'finalQuizSubmit'){ // 응시용 퀴즈 제출하기 버튼
-            result = BX.component(lesson.finalQuizSubmit);
-            result.find('.quizbutton')[0].onclick = submitQuiz;
-        }
-        
-        return result;
-    }
-
-    /**
-     * scrollintoview 처리 후, 버튼이 뷰포트 바깥으로 밀리는 경우 스크롤 조정
-     * @param {*} item - 감시할 대상요소
-     */
-    function adjustScroll(item) {
-        const io = new IntersectionObserver((entry) => {
-            if (!entry[0].isIntersecting) {
-                $('.lessonBook')[0].scrollBy(0, -40); // 강제이동
-            } 
-            io.disconnect(); //관찰 해제
-        });
-        // 옵저버할 대상 DOM을 선택하여 관찰을 시작합니다.
-        io.observe(item);
-    }
-    /**
      * 퀴즈 최종 제출하기 버튼 클릭 이벤트 핸들러
      * @param {*} e 
      */
@@ -703,7 +321,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 restart();
             }
         }, 500);
-        
     }
 
     /**
@@ -721,40 +338,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
         recordSolve(e.target);
     }
 
-    /**
-     * 교재 내에서 practice direction의 에디터 열기 버튼을 클릭한 경우
-     * @param {*} targetApp 
-     */
-    function openPractice(targetApp, title, bgCode) {
-        const editor =  $('.ace_editor')[0].aceEditor;
-        $('.emulator').show(); 
-
-        if(targetApp != 'free') {
-            const app = BX.components[targetApp];
-            const code = app.appCode || bgCode;
-            editSection.find('.appTitle')[0].innerText = app.appTitle;
-            $('.appWindow').empty();
-            app.practice().appendTo($('.appWindow')[0]); 
-            editor.setValue(code, 1);
-            editor.focus();
-            
-            // editorUpdate();
-            // eval(app.bgCode);
-            runApp();
-        } else {
-            editSection.find('.appTitle')[0].innerText = title;
-            editor.setValue(bgCode, 1);
-            editor.focus();
-        }
-        //배경코드 실행
-        // editor.getSession().on('change', editorUpdate);
-        $(editor).on('focus', e => {
-            clickedRunBtn = false;
-        });
-    }
-
-    let no = 0;
-    let clickedRunBtn = false;
     function editorUpdate() {
         const editor =  $('.ace_editor')[0].aceEditor;
         //높이 자동조절
@@ -870,9 +453,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                 title : title
             };
 
-            // if(!record[bookId]) {
-            //     record[bookId] = {};
-            // }
             const bookData = record.progress[bookId];
 
             if(!bookData[pageId]) { // 페이지 데이터가 없으면
@@ -1018,7 +598,6 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
                     } 
                     else if(page == String(Object.keys(book).length)){ // 마지막 페이지의 다음 버튼
                         pageMoveBtn.children()[1].style.display = 'none';
-                        // .addClass('last');
                     }
                 }
             }
@@ -1089,13 +668,10 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
      * @param {*} record 
      */
     function updateProgressData(record) {
-        // 교재 편집모드 에서는 update 제외
+        // 교재편집을 위한 테스트 모드에서는 update 제외
         if(new URLSearchParams(location.search).get('edit') == 'on') {
             return;
         } 
-        // if(!isTakingClass(crsStart)) { // 수강기간이 아니면 기록되지 않도록
-        //     return;
-        // }
         
         userData.course[crs] = record;
         updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
@@ -1170,38 +746,16 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
     }
 
     /**
-     * 학습자 입력요소 체크 여부 확인
-     * @returns 체크되지 않은 요소의 id 배열
-     */
-    function isReadAll() { //페이지의 체크박스를 모두 체크하였는지 확인
-        const checks = $('input.read_check');
-        let notReaded = [];
-        checks.each(function(i, b) {
-            if(b.type == 'checkbox'){
-                if(!b.checked) { //미체크 항목
-                    notReaded.push(b.id); 
-                }
-            } 
-        });
-        
-        const hidebox = $('.hideb');
-        hidebox.each(function(i, b) {
-            const hideTarget = $(b).children()[0];
-            if(!$(hideTarget).hasClass('checked')) {
-                notReaded.push(hideTarget.id); 
-            }
-        });
-        
-        return notReaded;
-    }
-
-    /**
      * 이전 버튼 클릭이벤트
      */
     function movePrevPage() {
-        const params = new URLSearchParams(location.search);                   
-        params.set('page', Number(params.get('page')) - 1);
-        location.href = 'makeroom.html?' + params.toString();
+        const decoded = atob(location.search.slice(1).slice(3));
+        const splited = decoded.split('&');
+        const pageStr = splited.filter(o => o.includes('page'))[0];
+        const idx = splited.indexOf(pageStr);
+        splited[idx] = `page=${Number(page) - 1}`;
+        const encoded = btoa(splited.join('&'));
+        location.href = `makeroom.html?eq=${encoded}`;
     }
 
     /**
@@ -1221,10 +775,14 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             toastr.error(`미확인 체크박스를 확인하고 다시 시도하세요.`);
             return;
         }
-
-        const params = new URLSearchParams(location.search);                   
-        params.set('page', Number(params.get('page')) + 1);
-        location.href = 'makeroom.html?' + params.toString();
+        
+        const decoded = atob(location.search.slice(1).slice(3));
+        const splited = decoded.split('&');
+        const pageStr = splited.filter(o => o.includes('page'))[0];
+        const idx = splited.indexOf(pageStr);
+        splited[idx] = `page=${Number(page) + 1}`;
+        const encoded = btoa(splited.join('&'));
+        location.href = `makeroom.html?eq=${encoded}`;
     }
 
     /**
@@ -1249,11 +807,10 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             saveUserData(finishCheckBox, true); //update 없이 데이터 정리만
             userData.course[crs] = record;
 
-            calcProgress(crs, userData, function(result) { 
+            calcProgress(courseData, lecBooks, crs, userData, function(result) { 
                 //result는 전체 progress(%), 중간 진도 전송
                 const progress = result; 
                 postProgress(crsStart.substring(0, 4), record.courseCd, record.courseCsNo, mid, progress, function(done){
-                    // 진도전송시마다 totalProgress 업데이트
                     if(!done.ok) {
                         $(finishCheckBox).prop('checked', false);
                         toastr.error('진도기록에 실패했습니다. 다시 시도하세요.');
@@ -1262,7 +819,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
 
                     playSound('choice'); console.log(done, 'response');
                     e.target.disabled = true;
-                    userData.course[crs].totalProgress =  progress;
+                    userData.course[crs].totalProgress = progress; // 진도전송시마다 totalProgress 업데이트
                     updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
                 });
             });
@@ -1310,7 +867,7 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
      */
     let isCtrl, isSkey;
     document.onkeyup = function(e) {
-        if (e.key == 'Control')  isCtrl = false; //17
+        if (e.key == 'Control')  isCtrl = false;
         if (e.key == 's')  isSkey = false;
     }
     document.onkeydown = function(e) {
@@ -1321,7 +878,4 @@ var bookReady = false; // 체크 기록 표시에는 사운드가 재생되지 �
             return false;
         }
     }
-    window.createComponent = createComponent;
 })();
-
-

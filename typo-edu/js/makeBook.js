@@ -1,5 +1,5 @@
 //교재 만들기 편집 도구
-let bookData = getBookData(); console.log(bookData);
+let bookData = getBookData();
 let favoriteStyle = JSON.parse(localStorage.getItem("style")) || [];
 let totalCourse = getTotalCourseData();
 let previewBox, contentList, editBox;
@@ -18,26 +18,33 @@ function appendMakeBook(){
         appendStyleUnit(unit);
     }
     
-    if(bookData) { // bookData가 있으면 교재 선택상자 option 추가
+    if(bookData) { // localstorage bookData가 있으면 교재 선택상자 option 추가
         Object.keys(bookData).forEach(id => {
             $("#bookSelect").append(`<option value="${id}">${bookData[id].title}</option>`);
         });
     }
-    else { //bookData가 없으면, json 데이터 가져오기
+    else { // localstorage bookData가 없으면, json 파일 데이터 가져오기
         bookData = {};
         getJsonData('./lecture/course.json', json => {
             Object.keys(json).forEach(function(crs) {
                 const books = json[crs].books;
-                const ids = books.map(o => o.id);
-                
-                for(var id of ids) {
-                    getBook(crs, id, function(data) {
+                let ids = books.map(o => o.id);
+                ids = ids.concat(json[crs].quiz); //퀴즈교재 포함
+
+                const collect = () => {
+                    if(ids.length == 0) {
+                        return;
+                    }
+                    let id = ids.shift();
+                    getBook(crs, id, function(data) { 
                         bookData[id] = data;
                         $("#bookSelect").append(`<option value="${id}">${bookData[id].title}</option>`);
+                        collect();
                     });
                 }
+                collect();
             });
-        })
+        });
     }
     
     previewBox = box().appendTo(bg).size('65%', 'calc(100vh - 40px)').padding(20).overflow('auto').fontSize(20).fontFamily('GangwonEdu_OTFBoldA, sans-serif');
@@ -57,11 +64,14 @@ function appendStyleUnit(style){
     line[0].onclick = e => {
         let idx = e.target.tagName == 'DIV' ? $(e.target).index() : $(e.target).parent().index();
         let copied = favoriteStyle[idx];
-        setTimeout(async() => {
-            await window.navigator.clipboard.writeText(copied).then(() => {
-                // alert("클립보드로 복사되었습니다.");
-            });
-        }, 300);
+        if(window.navigator.clipboard) {
+            setTimeout(async() => {
+                await window.navigator.clipboard.writeText(copied);
+            }, 300);
+        } else {
+            toastr.success('콘솔을 확인하세요.');
+            console.log(copied);
+        }
     }
 }
 /**
@@ -151,9 +161,7 @@ function appendEditTool(data, order) {
             for(let i in data.example) {
                 exampleSheet.children()[i].value = data.example[i];
             }
-            
         }
-        //-->
     }
 
     return b;
@@ -172,15 +180,12 @@ function deleteContent(e) {
         if(isDelete) {
             parent.remove(); // 편집툴 제거 
             previewBox.children()[order-1].remove();
-
             sortedOrder();
         } 
         else {
             previewBox.children()[order-1].style.border = '1px solid #f7f7f7';
         }
-    }, 200)
-    
-    
+    }, 200);
 }
 
 /**
@@ -212,7 +217,7 @@ function loadCourse(e) {
 }
 
 /**
- * 
+ * 코스관리 버튼 클릭이벤트 
  * @param {*} e 
  */
 function manageCourse(e) {
@@ -268,14 +273,13 @@ function manageCourse(e) {
     $('#selectArrow')[0].onclick = e => { 
         $( ".ui-selected").each(function(i, el) {
             const cloneEl = el.cloneNode(true);
-            // $(cloneEl).find('span').show();
             $(cloneEl).removeClass('ui-selected');
             const sortBox = BX.component(edit.bookSortBox).appendTo($('#sortable')[0]);
             sortBox.prepend(cloneEl);
         });
     }
 
-    $( "#sortable" ).sortable({//course
+    $( "#sortable" ).sortable({ //course
         revert: true,
         placeholder: "ui-state-highlight",
     });
@@ -442,7 +446,6 @@ function loadEditTool(e) {
     let selected = combobox.options[combobox.selectedIndex].value;
     if(selected == 'ending' || selected == 'none' || selected == 'finalQuizSubmit') return;
 
-
     const component = BX.component(editInput[selected]).appendTo(target);
     if(selected == 'image') { //교재별 이미지 경로 문자열 자동완성 - 파일명만 입력하면 되도록, 이미지는 교재폴더 안에 업로드
         $(target).find('input[name=src]')[0].value = `./lecture/crs_code/${location.hash.slice(1)}/`;
@@ -527,7 +530,6 @@ function createPage(e) {
         }
         newData[pageId] = newPage;
         pageData.push(newData);
-        console.log(newData);
 
         bookData[location.hash.slice(1)].pages = pageData;
         saveBookData(bookData);
@@ -545,7 +547,7 @@ function savePageData(e){
     // 데이터 수집
     let isSave = confirm('저장하시겠습니까?');
     const modifiedData = JSON.parse(JSON.stringify(bookData));
-    console.log(modifiedData == bookData)
+
     if(isSave) {
         const list = contentList.children();
         let pageData = [];
@@ -568,14 +570,17 @@ function savePageData(e){
             toastr.success('저장되었습니다');
             bookData = modifiedData;
             const copied = JSON.stringify(bookData[location.hash.slice(1)].pages);
-            // console.log(copied);
 
-            setTimeout(async() => {
-                await window.navigator.clipboard.writeText(copied).then(() => {
-                    // 복사가 완료되면 이 부분이 호출된다.
-                    // alert("클립보드로 복사되었습니다.\njson 데이터를 수정하세요.");
-                });
-            }, 1000);
+            if(window.navigator.clipboard){
+                setTimeout(async() => {
+                    await window.navigator.clipboard.writeText(copied);
+                }, 1000);
+            }
+            else {
+                toastr.success('콘솔을 확인하세요.');
+                console.log(copied);
+            }
+            
         }  
     } 
 }
@@ -616,7 +621,7 @@ function loadPage(e) {
  * @param {*} e 
  */
 function loadContents(e) {
-    //content 데이터로 페이지 미리보기  인덱스의 value
+    //content 데이터로 페이지 미리보기 인덱스의 value
     previewBox.empty();
     contentList.empty();
     const pageData = bookData[location.hash.slice(1)].pages;
@@ -664,8 +669,6 @@ function saveBookSettingData(e) {
         }
         modifiedData[bookId].pages = updateList;
 
-
-
         if(JSON.stringify(bookData) === JSON.stringify(modifiedData)) {
             toastr.error('변경내용이 없습니다.');
             return;
@@ -683,8 +686,6 @@ function saveBookSettingData(e) {
  */
 function deleteBook(e) {
     const bookId = $('#bookSelect')[0].options[$('#bookSelect')[0].selectedIndex].value;
-    
-    //저장
     let isDelete = confirm('삭제 하시겠습니까?');
     if(isDelete) {
         delete bookData[bookId];
@@ -731,7 +732,6 @@ function sortedOrder() {
 }
 
 function saveBookData(data) {
-    if(data)
-        localStorage.setItem("book", JSON.stringify(data));
+    if(data) localStorage.setItem("book", JSON.stringify(data));
 }
 
