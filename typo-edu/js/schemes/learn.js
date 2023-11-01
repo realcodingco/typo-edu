@@ -109,7 +109,7 @@ const learn = {
                         text: 'other_houses',
                         className: 'material-symbols-outlined homeicon',
                         onClick: e => {
-                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&bid=${groupId}`;
                             location.href = `index.html?eq=${btoa(queryStr)}`;
                         }
                     },
@@ -495,7 +495,7 @@ const learn = {
                                 className: 'material-symbols-outlined listbtn',
                                 text : 'apps',
                                 onClick: e => {   
-                                    const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                                    const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&bid=${groupId}`;
                                     location.href = `index.html?eq=${btoa(queryStr)}#list`;
                                 },
                                 children: [

@@ -43,6 +43,7 @@ let clickedRunBtn = false;
     window.mid = mid;
     window.crsStart = crsStart;
     window.bookId = bookId;
+    window.groupId = groupId;
 
     getCrsBookData(crs, function(json) {
         courseData = json.courseData;
@@ -81,13 +82,15 @@ let clickedRunBtn = false;
                         restTime = (Number(ms[0]) * 60) + Number(ms[1]);
                         
                         userData.course[crs].quiz.testTime = restTime;
-                        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function(){
-                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                        let quizTestTimeData = {}; //퀴즈 남은시간 firestore 저장
+                        quizTestTimeData[`course.${crs}.quiz.testTime`] = restTime;
+                        updateUserData({groupId: groupId, mid : mid, data: quizTestTimeData, crsStart: crsStart}, function(){
+                            const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&bid=${groupId}`;
                             location.href = `index.html?eq=${btoa(queryStr)}#`;
                         });
                     } 
                     else {
-                        const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}`;
+                        const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&bid=${groupId}`;
                         location.href = `index.html?eq=${btoa(queryStr)}#`;
                     }
                 };
@@ -216,7 +219,11 @@ let clickedRunBtn = false;
             //남은 시간을 30초 단위로 기록
             if(recordSecond == 0) {
                 recordSecond = 30;
-                updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+
+                let intermediateData = {};//userData.course[crs].quiz.solve.detail 퀴즈 풀이내용, 남은 시간 저장
+                intermediateData[`course.${crs}.quiz.solve.detail`] = userData.course[crs].quiz.solve.detail;
+                intermediateData[`course.${crs}.quiz.testTime`] = userData.course[crs].quiz.testTime;
+                updateUserData({groupId: groupId, mid : mid, data: intermediateData, crsStart: crsStart});
             }
             
             // 학습종료일 자정이 경과된 시점에 자동 제출
@@ -250,7 +257,11 @@ let clickedRunBtn = false;
         let entrance = userData.course[crs].quiz.entrance.count;
         userData.course[crs].quiz.entrance.time = Date.now(); // 마지막 입장시점
         userData.course[crs].quiz.entrance.count = entrance + 1; //입장할때마다 카운트 기록
-        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+
+        let quizEntranceData = {}; // firestore 입장 시간, 횟수 저장
+        quizEntranceData[`course.${crs}.quiz.entrance.time`] = userData.course[crs].quiz.entrance.time;
+        quizEntranceData[`course.${crs}.quiz.entrance.count`] = firebase.firestore.FieldValue.increment(1);
+        updateUserData({groupId: groupId, mid : mid, data: quizEntranceData, crsStart: crsStart});
 
         $('.quizGuidePop')[0].remove();
         let minute = Math.floor(testTime / 60);
@@ -284,7 +295,13 @@ let clickedRunBtn = false;
             userData.course[crs].quiz.solve.correctCount = correct;
             userData.course[crs].quiz.solve.incorrectCount = incorrect;
             userData.course[crs].quiz.solve.time = Date.now();
-            updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function(){
+
+            let lastsubmitData = {};
+            lastsubmitData[`course.${crs}.quiz.score`] = score;
+            lastsubmitData[`course.${crs}.quiz.solve.correctCount`] = correct;
+            lastsubmitData[`course.${crs}.quiz.solve.incorrectCount`] = incorrect;
+            lastsubmitData[`course.${crs}.quiz.solve.time`] = userData.course[crs].quiz.solve.time;
+            updateUserData({groupId: groupId, mid : mid, data: lastsubmitData, crsStart: crsStart}, function(){
                 toastr.success('최종 제출되었습니다.');
                 //버튼 숨기고, 제출되었다 안내하고 모든 버튼 클릭 이벤트 없앰
                 $(e.target).hide();
@@ -390,9 +407,11 @@ let clickedRunBtn = false;
             if(deletedTarget) {
                 delete record.progress[bookId][pageId].code[codeId];
                 userData.course[crs] = record;
-        
-                //merge의 경우, 없는(삭제) 데이터는 그대로 남으므로, update 아닌 write로 저장
-                putUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, (result) => {
+
+                let delData = {};
+                delData[`course.${crs}.progress.${bookId}.${pageId}.code.${codeId}`] = firebase.firestore.FieldValue.delete();
+
+                updateUserData({groupId: groupId, mid : mid, data: delData, crsStart: crsStart}, (result) => {
                     toastr.success('코드 기록이 삭제되었습니다.');
                 });
             }
@@ -454,7 +473,7 @@ let clickedRunBtn = false;
                 title : title
             };
 
-            const bookData = record.progress[bookId];
+            let bookData = record.progress[bookId];
 
             if(!bookData[pageId]) { // 페이지 데이터가 없으면
                 bookData[pageId] = {code : {}};
@@ -466,7 +485,8 @@ let clickedRunBtn = false;
             bookData[pageId].code[codeId] = codeData;
             record.progress[bookId] = bookData;
             // 데이터 업데이트 저장.
-            updateProgressData(record);
+            userData.course[crs] = record;
+            updateProgressData(`course.${crs}.progress.${bookId}.${pageId}.code.${codeId}`, codeData);
         }
 
         editor.blur();
@@ -644,7 +664,7 @@ let clickedRunBtn = false;
         const clickid = target.id;
         if(!clickid) return;
     
-        const bookData = record.progress[bookId];
+        let bookData = record.progress[bookId];
         if(!bookData[pageid]) {
             bookData[pageid] = {
                 clicked : []
@@ -658,24 +678,28 @@ let clickedRunBtn = false;
             bookData[pageid].time = Date.now();
         }
         record.progress[bookId] = bookData;
+        userData.course[crs] = record;
 
-        if(!justData) { 
-            updateProgressData(record);
+        if(!justData) {  //해당 페이지의 내용만..
+            updateProgressData(`course.${crs}.progress.${bookId}.${pageid}`, bookData[pageid]);
         }
     }
 
     /**
      * 학습자 진도기록 업데이트
-     * @param {*} record 
+     * '23. 10. 매개변수 path, data로 변경
+     * @param {*} path - update path 점표기법으로 구분된
+     * @param {*} data - 기록할 데이터
      */
-    function updateProgressData(record) {
+    function updateProgressData(path, data) {
         // 교재편집을 위한 테스트 모드에서는 update 제외
         if(new URLSearchParams(location.search).get('edit') == 'on') {
             return;
         } 
-        
-        userData.course[crs] = record;
-        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+
+        const updateData = {};
+        updateData[path] = data;
+        updateUserData({groupId: groupId, mid : mid, data: updateData, crsStart: crsStart});
     }
 
     /**
@@ -805,8 +829,8 @@ let clickedRunBtn = false;
         if ( bookReady && $(finishCheckBox).prop('checked') ) {
             const parent = $($(finishCheckBox).parent()[0]);
             parent.removeClass('clickRequired');
-            saveUserData(finishCheckBox, true); //update 없이 데이터 정리만
-            userData.course[crs] = record;
+            saveUserData(finishCheckBox); //update 없이 데이터 정리만
+            // userData.course[crs] = record;
 
             calcProgress(courseData, lecBooks, crs, userData, function(result) { 
                 //result는 전체 progress(%), 중간 진도 전송
@@ -821,7 +845,9 @@ let clickedRunBtn = false;
                     playSound('choice'); console.log(done, 'response');
                     e.target.disabled = true;
                     userData.course[crs].totalProgress = progress; // 진도전송시마다 totalProgress 업데이트
-                    updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
+                    const refData = {};
+                    refData[`course.${crs}.totalProgress`] = progress;
+                    updateUserData({groupId: groupId, mid : mid, data: refData, crsStart: crsStart});
                 });
             });
         }

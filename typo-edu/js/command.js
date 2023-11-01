@@ -211,7 +211,10 @@ function getUserData(data, fn) {
                         .collection('members').doc(data.mid)
                         .get()
                         .then(callback)
-                        .catch(callback);
+                        .catch((error) => {
+                            toastr.error('일시적인 네트워크 오류입니다. 새로고침 후, 다시 시도하세요.');
+                            throw new Error('일시적인 네트워크 오류');
+                        });
     };
     
     read(function(doc) {
@@ -255,6 +258,7 @@ function updateUserData(data, fn) {
         if(fn) fn(result);
     });
 }
+
 /**
  * 현재 시점이 수강기간에 해당하는지 체크
  * @param {string} yyyymmdd - edustart
@@ -276,7 +280,7 @@ function calcEndDate(crsStart) {
     }
 
     const eduStart = new Date(crsStart.substring(0,4), crsStart.substring(4, 6) - 1, 1);
-    return new Date(eduStart.getFullYear(), eduStart.getMonth()+1, 0);
+    return new Date(eduStart.getFullYear(), eduStart.getMonth()+1, 0); 
 }
 /**
  * 전체 학습진도율 계산

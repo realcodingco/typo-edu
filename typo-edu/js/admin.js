@@ -149,7 +149,7 @@
                 const content = convertTag(popup.find('textarea')[0].value);
                 let from = 'help@cellwork.net';
                 let emailAddress = mailingList[unit.mid].email; 
-                postEmail(from, from, title, content, ()=>{}); // 확인용 메일발송
+                postEmail(from, from, title, `TO: ${emailAddress} \n` + content, ()=>{}); // 확인용 메일발송
                 postEmail(from, emailAddress, title, content, function(result) {
                     // 성공실패 표시 후, 다음 전송
                     if(result.ok) {
@@ -242,7 +242,7 @@
                 data[0] = mid;
                 data[3] = totalCourse[crs].title;
                 data[4] = groupData[mid].course[crs].courseCd;
-                data[6] = groupData[mid].course[crs].finalprog;
+                data[6] = Number(groupData[mid].course[crs].finalprog) + '%';
                 data[8] = quizScore;
                 data[10] = quizScore >= 60 ? '수료' : '미수료';
                 result.push(data);
@@ -287,7 +287,7 @@
             $('.headTag')[0].innerText = '';
             return;
         }
-         
+        console.log('결과전송 버튼의 data-set 확인을 먼저 하세요.'); 
         if(selected == 'ymonth'){ // 입과일 기준으로 검색
             $('.excelfileBtn').hide();
             let matchNo = 0; 
@@ -321,6 +321,7 @@
                                 appendResult(user);
                             }
                         }
+                        console.log(groupData, '<<')
                         $('.excelfileBtn').show();
                     });
                 });
@@ -403,7 +404,6 @@
                 line.find('span:nth-child(1)')[0].innerText = crs;
                 line.find('span:nth-child(2)')[0].innerText = totalCourse[crs].title;
                 line.find('span:nth-child(4)')[0].innerText = date;
-                line.find('span:nth-child(5)')[0].innerText = new Date(crsData.time).toLocaleString();
 
                 const progress = crsData.progress;
                 const progBg = BX.component(admin.progInfoBox).appendTo(bg);
@@ -416,7 +416,8 @@
                     getProgress(listBg, crs, totalCourse[crs].books, progress, function(finalprogress){
                         // 관리자페이지에서 조회 시점의 최종 진도율 : 주차별 학습진도 안내 메일링에서 사용
                         groupData[data.mid].course[crs].finalprog = finalprogress;
-                    }); 
+                    });
+                    line.find('span:nth-child(5)')[0].innerText = new Date(crsData.time).toLocaleString(); 
                 } 
                 else {
                     groupData[data.mid].course[crs].finalprog = 0;
@@ -465,13 +466,13 @@
                 if(Date.now() >= new Date(year, month, 1).getTime()) {
                     const btn = line.find('.postResultBtn')[0];
                     btn.dataset.score = crsData.quiz ? crsData.quiz.score : 0;
-                    btn.dataset.progress = progBg.find('.totalProgress')[0].dataset.progress;
+                    btn.dataset.progress = progBg.find('.totalProgress')[0].dataset.progress; //data.course[crs].totalProgress;
                     btn.dataset.crs = crs;
                     btn.dataset.mid = data.mid;
                     btn.dataset.year = year;
                     btn.dataset.groupId = data.groupId;
-                    btn.dataset.courseCd = data.courseCd;
-                    btn.dataset.courseCsNo = data.courseCsNo;
+                    btn.dataset.courseCd = data.course[crs].courseCd;
+                    btn.dataset.courseCsNo = data.course[crs].courseCsNo;
                     btn.style.display = 'block';
 
                     if(crsData.quiz && crsData.quiz.vendorResponse) {
@@ -525,10 +526,13 @@
 
         postLotteResult(postData, function(isSuccess) {
             if(isSuccess) {
-                toastr('전송완료 되었습니다.');
+                toastr.success('전송완료 되었습니다.');
                 btn.innerText = '전송완료';
                 btn.onclick = 'disable';
                 $(btn).addClass('success');
+            }
+            else {
+
             }
         });
     }
@@ -634,7 +638,10 @@
         groupData[mid].course[crs].quiz.solve.incorrectCount = incorrect;
         groupData[mid].course[crs].quiz.solve.time = Date.now();
         groupData[mid].course[crs].quiz.solve.autoSubmit = true; //자동제출 건인지 기록
-        updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+
+        let autoData = {}; // 퀴즈 자동제출 데이터 firestore 저장
+        autoData[`course.${crs}.quiz.solve`] = groupData[mid].course[crs].quiz.solve;
+        updateUserData({groupId: group, mid:mid, data:autoData, crsStart:crsStart}, function(result){
             toastr.success('자동제출 되었습니다.');
             if(fn) fn(score);
         });
@@ -650,8 +657,9 @@
         const answer = confirm('퀴즈 기록을 삭제하시겠습니까?');
         if(answer) {
             delete groupData[mid].course[data.crs].quiz;
-            
-            updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+            let delData = {};
+            delData[`course.${data.crs}.quiz`] = firebase.firestore.FieldValue.delete();
+            updateUserData({groupId: group, mid:mid, data:delData, crsStart:crsStart}, function(result){
                 toastr.success('삭제되었습니다.');
                 $(e.target).siblings('span')[0].innerText = '평가점수 : 미응시';
                 $(e.target).siblings('button').hide();
@@ -673,8 +681,9 @@
         const answer = confirm('진도 기록을 삭제하시겠습니까?');
         if(answer) {
             delete groupData[mid].course[data.crs].progress;
-            
-            updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+            let delData = {};
+            delData[`course.${data.crs}.progress`] = firebase.firestore.FieldValue.delete();
+            updateUserData({groupId: group, mid:mid, data:delData, crsStart:crsStart}, function(result){
                 toastr.success('삭제되었습니다.');
                 $(e.target).siblings('span')[0].innerText = '학습진도율 : 0%';
                 $(e.target).siblings('button').hide();
@@ -692,7 +701,7 @@
         let progData = [];
         let bookData = {};
         Object.keys(books).forEach(function(o, pos){
-            const calcProg = function(json){
+            const calcProg = function(json){ 
                 const bid = json.id;
                 bookData[bid] = json; 
                 if(!totalBookData[crs]) totalBookData[crs] = {};
@@ -791,7 +800,9 @@
             if(isDelete){
                 delete groupData[mid].course[data.crs].progress[data.bookid];
 
-                updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+                let delData = {};
+                delData[`course.${data.crs}.progress.${data.bookid}`] = firebase.firestore.FieldValue.delete();
+                updateUserData({groupId: group, mid:mid, data:delData, crsStart:crsStart}, function(result){
                     toastr.success('삭제되었습니다.');
                     $(bar).removeClass('selected');
                     const prevTxt = $(bar).children()[0].innerText;
@@ -875,13 +886,14 @@
                 toastr.error('전송 실패입니다. 다시 시도하세요.');
                 return;
             }
-
+            
             if(!groupData[mid].course[crs_code].quiz) { // 미학습, 미응시로 데이터가 없는 경우
                 groupData[mid].course[crs_code].quiz = {};
             }
             const resData = {result:response, params: param};
-            groupData[mid].course[crs_code].quiz.vendorResponse = resData;
             groupData[mid].course[crs_code].quiz.vendorUptime = Date.now();
+            groupData[mid].course[crs_code].quiz.vendorResponse = JSON.stringify(resData);
+            
             
             if(unstudied) { // 미학습자의 경우, 진도/퀴즈 기록 없이 response 데이터 저장,
                 putUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
@@ -889,7 +901,10 @@
                 });
             }
             else {
-                updateUserData({groupId: group, mid:mid, data:groupData[mid], crsStart:crsStart}, function(result){
+                let vendorResultData = {};
+                vendorResultData[`course.${crs_code}.quiz.vendorUptime`] = groupData[mid].course[crs_code].quiz.vendorUptime;
+                vendorResultData[`course.${crs_code}.quiz.vendorResponse`] = groupData[mid].course[crs_code].quiz.vendorResponse;
+                updateUserData({groupId: group, mid:mid, data:vendorResultData, crsStart:crsStart}, function(result){
                     fn && fn(true);
                 });
             }

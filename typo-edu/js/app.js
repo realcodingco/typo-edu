@@ -48,7 +48,7 @@
     if(!groupId) { // bid 파라미터가 없으면 '롯데 이지러닝'
         groupId = 'lotte';
     }
-
+    
     getUserData({groupId:groupId, crsStart:crsStart, mid:mid}, function(data) {
         userData = data;
         //입과 대상인지 확인
@@ -56,6 +56,7 @@
             if(result) {
                 const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
                 if(Object.keys(userData).length == 0) { //신규 
+                    console.log('신규');
                     userData = {
                         groupId : groupId,
                         mid: mid,
@@ -70,15 +71,12 @@
                     };
                 }
                 else if(courseData && courseData.edustart == crsStart){ //계속 학습
-                    if(!courseData.courseCd || !courseData.courseCsNo) {
-                        userData.course[crs].courseCd = result.courseCd;
-                        userData.course[crs].courseCsNo = result.courseCsNo;
-                        updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart});
-                    }   
+                    console.log('계속 학습'); 
                     init();
                     return;
                 }
                 else if(courseData && courseData.edustart != crsStart){ //재수강 있을 수 없음
+                    console.log('재수강');
                     const retake = confirm('재수강입니다. 학습을 시작하기 위해 이전 학습 기록이 삭제됩니다.');
                     if(retake){ // 재수강 기록삭제시. 결과전송 데이터도 삭제? 
                         userData.course[crs] = { //코스데이터 초기화
@@ -94,6 +92,7 @@
                     return;
                 }
                 else { // 같은 기간에 2개 과정 추가 수강
+                    console.log('복수 수강');
                     userData.course[crs] = {
                         edustart: crsStart,
                         courseCd: result.courseCd,
@@ -114,6 +113,7 @@
     window.mid = mid;
     window.crsStart = crsStart;
     window.crs = crs;
+    window.groupId = groupId;
     
     /**
      * 페이지 초기화
@@ -220,7 +220,10 @@
                 shuffle(numbers);
                 quizRecord.type = numbers[0];
                 userData.course[crs].quiz = quizRecord;
-                updateUserData({groupId: groupId, mid : mid, data: userData, crsStart: crsStart}, function() {
+
+                let quizData = {}; // firestore에 저장할 필드 데이터
+                quizData[`course.${crs}.quiz`] = quizRecord;
+                updateUserData({groupId: groupId, mid : mid, data: quizData, crsStart: crsStart}, function() {
                     let qid = course.quiz[quizRecord.type];
                     openQuizPage(qid, quizRecord.type);
                 });
@@ -561,6 +564,16 @@
                     }
                 });
             }
+        }
+        else if(groupId == 'reco') { //테스트환경, 계정 추가 '23. 11.
+            const testAccount = {
+                cpCourseCd : 'L018761',
+                userNm : '김철수',
+                userId: 'test1',
+                courseCd : 'E187611',
+                courseCsNo : '11',
+            }
+            fn(testAccount);
         }
     }
 })();
