@@ -352,18 +352,20 @@ const admin = {
         className: 'solveUnit',
         style: {
             width: '100%',
+            display: 'flex',
+            flexDirection: 'column'
         },
         children: [
             {
                 kind : 'box',
                 style: {
                     height: 30,
-                    width: 30,
+                    width: '100%',
                     border: '1px solid #ADD3FF',
                     margin: 1,
                     color: '#ADD3FF',
                     padding: 5,
-                    textAlign: 'center'
+                    textAlign: 'left'
                 }
             },
             {

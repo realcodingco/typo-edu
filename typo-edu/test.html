@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Runner Example</title>
+    <script>
+        //#1. 실행 결과 콜백
+        window.onConsoleFromChild = function(result) {
+            console.log(result, '<<');
+        }
+
+        // #2. 실행할 코드 저장 
+        const codeText = 'print(123)';
+        localStorage.setItem('_local_preview_src_', codeText);
+
+    </script>
+</head>
+<body>
+
+   
+    <!-- #3. iframe 실행 (web 함수) -->
+    <iframe src="./pyrunner.html?console_target=onConsoleFromChild&p=_local_once_code_&code_lang=python312&code_name=_local_preview_src_" frameborder="0"></iframe>
+</body>
+</html>

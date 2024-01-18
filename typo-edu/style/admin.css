@@ -1,10 +1,10 @@
 .incorrect {
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="100%" x2="100%" y2="0" stroke="red" /></svg>');
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="100%" x2="100%" y2="0" stroke="red" /></svg>') !important;
 }
 
 .previewQuestion{
     height: auto;
-    width: calc(90% - 70px);
+    /* width: calc(90% - 70px); */
     border: 1px solid #ADD3FF;
     margin: 1px;
     color: #ADD3FF;

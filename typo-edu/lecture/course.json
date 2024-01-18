@@ -2,6 +2,10 @@
     "L018761": {
         "title": "모던 자바스크립트 꿀잼 실습",
         "crs" : "L018761",
+        "e_crs" : "E187611",
+        "page_bgColor" : "#fffefe",
+        "font" : "GangwonEdu_OTFBoldA, sans-serif",
+        "fontColor": "#444",
         "completed" : "학습진도 80% , 퀴즈 60점 이상시 수료",
         "quiz" : ["45ce8df8", "d3da55d4"],
         "books": [
@@ -151,5 +155,81 @@
             }
         ],
         "time": 1673272317509
+    },
+    "L019442": {
+        "type" : "card",
+        "title": "나도데이터사이언티스트 파이썬초급 v3.12",
+        "page_bgColor" : "#254142",
+        "page_bgImage" : "none",
+        "font" : "SUITE-Regular, sans-serif",
+        "fontColor": "white",
+        "crs" : "L019442",
+        "e_crs" : "E194421",
+        "completed" : "학습진도 80% , 퀴즈 60점 이상시 수료",
+        "quiz" : ["c9560c01", "e9b4771e"],
+        "books": [
+            {
+                "step": 1,
+                "id": "9b11fa5f", 
+                "title": "1강. 파이썬의 개요, 변수의 개념이해와 연산",
+                "icon": "undraw_data_processing_yrrv.svg"
+            },
+            {
+                "step": 2,
+                "id": "bb5a1ac2", 
+                "title": "2강. 함수의 개념이해와 사용",
+                "icon": "undraw_data_processing_yrrv.svg"
+            },
+            {
+                "step": 3,
+                "id": "e5f17715",
+                "title": "3강. 엑셀 라이브러리 기초",
+                "icon": "undraw_completed_tasks_vs6q.svg"
+            },
+            {
+                "step": 4,
+                "id": "069b78a3",
+                "title": "4강. 파이썬의 조건문",
+                "icon": "undraw_calculator_re_alsc.svg"
+            },
+            {
+                "step": 5,
+                "id": "459c7aaf",
+                "title": "5강. 엑셀 라이브러리 활용 파이썬 실습 1",
+                "icon": "undraw_functions_re_alho.svg"
+            },
+            {
+                "step": 6,
+                "id": "db90285c",
+                "title": "6강. 파이썬의 반복문",
+                "icon": "undraw_working_remotely_re_6b3a.svg"
+            },
+            {
+                "step": 7,
+                "id": "31ccba2b",
+                "title": "7강. 엑셀 라이브러리 활용 파이썬 실습 2",
+                "icon": "undraw_check_boxes_re_v40f.svg"
+            },
+            {
+                "step": 8,
+                "id": "23cb7973",
+                "title": "8강. 파이썬의 자료구조 : 리스트와 튜플",
+                "icon": "undraw_accept_tasks_re_09mv.svg"
+            },
+            {
+                "step": 9,
+                "id": "524708af",
+                "title": "9강. 파이썬의 자료구조 : 딕셔너리",
+                "icon": "undraw_progress_indicator_re_4o4n.svg"
+            },
+            {
+                "step": 10,
+                "id": "4f614678",
+                "title": "10강. 성적계산기와 환율정보 스크레이핑",
+                "icon": "undraw_progress_overview_re_tvcl.svg"
+            }
+        ],
+        "time" : 1702904784623
     }
+    
 }

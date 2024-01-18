@@ -24,6 +24,9 @@
         }
     };
 
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+
     // IE 접속의 경우 크롬접속 안내
     var agent = navigator.userAgent.toLowerCase();
     if ( (navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1) || (agent.indexOf("msie") != -1) ) {
@@ -35,7 +38,7 @@
         toastr.error('지원하지 않는 브라우저 입니다.<br>크롬이나 엣지 브라우저에서 접속하세요.');
         return;
     }
-
+    //?bid=reco&p_userid=test&p_cpsubj=python&edustart=20231201
     const mid = searchParams(params, 'p_userid');
     const crs = searchParams(params, 'p_cpsubj');
     let groupId = searchParams(params, 'bid');
@@ -50,11 +53,12 @@
     }
     
     getUserData({groupId:groupId, crsStart:crsStart, mid:mid}, function(data) {
-        userData = data;
+        userData = data; console.log(userData);
         //입과 대상인지 확인
         getEnroll(groupId, function(result) { 
             if(result) {
                 const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
+
                 if(Object.keys(userData).length == 0) { //신규 
                     console.log('신규');
                     userData = {
@@ -71,7 +75,7 @@
                     };
                 }
                 else if(courseData && courseData.edustart == crsStart){ //계속 학습
-                    console.log('계속 학습'); 
+                    console.log('계속 학습', userData); 
                     init();
                     return;
                 }
@@ -105,7 +109,7 @@
                 });
             }
             else { //입과리스트에 없는
-                toastr.error('잘못된 접근입니다.');
+                toastr.error('잘못된 접근입니다.', '유효하지 않은 접근');
             }
         });
     });
@@ -120,8 +124,10 @@
      */
     function init() {
         getCrsBookData(crs, function(json) {
-            courseData = json.courseData;
-            bookData = json.bookData;
+            courseData = json.courseData; 
+            bookData = json.bookData; 
+
+            document.title = courseData[crs].title;
             calcProgress(courseData, bookData, crs, userData, function(result){
                 curProgress = result;
                 homepage = BX.component(main.bg).appendTo(topBox);
@@ -196,9 +202,10 @@
         const course  = courseData[crs];
         const courseTitle = course.title; 
         userData.course[crs].title = courseTitle;
-        document.title = courseTitle;
+        
         const iconbox = BX.component(main.courseIcon).appendTo(padBg[0]);
         iconbox.children()[0].innerHTML = `반갑습니다. <b>${userData.name}</b> 학습자님.`;
+        iconbox.children()[1].style.background = `lightgray url("./lecture/${course.e_crs}.png") center/96%`; //E_crs로 저장된 배너 이미지 
         iconbox.children()[2].innerText = course.completed;
 
         const quizRecord = userData.course[crs].quiz || {};
@@ -252,7 +259,7 @@
         } 
         else if(!isTakingClass(crsStart)) { // 수강 기간이 아니면 버튼 접근제한
             quizButton.onclick = e => {
-                toastr.error('수강기간이 아니므로 응시할 수 없습니다.');
+                toastr.error('수강기간이 아니므로 응시할 수 없습니다.', '응시불가');
             }
         }
         else if(curProgress >= 80) {//진도 80% 이상일때만 입장
@@ -260,7 +267,7 @@
         }
         else {
             quizButton.onclick = e => {
-                toastr.error('학습진도율 80% 미만입니다.');
+                toastr.error('학습진도율 80% 미만입니다.<br>학습을 진행한 후 다시 시도하세요.', '응시불가');
             }
         }
     }
@@ -270,7 +277,7 @@
      */
     function getMyCourse() {
         if(!mid) {
-            toastr.error('등록된 수강생이 아니거나 잘못된 접근입니다.');
+            toastr.error('등록된 수강생이 아니거나 잘못된 접근입니다.', '유효하지 않은 접근');
             return;
         }
 
@@ -318,6 +325,7 @@
                             }
                             
                             const checkResult = isAllChecked(cid, bid, i+1); //페이지 학습이 완료된 상태
+                            
                             if(lastPage == null && !checkResult) {
                                 lastPage = i+1;
                             }
@@ -338,19 +346,19 @@
                         if(bookCount == books.length-1) {
                             const percent = totalProgress / books.length;
                             const total = parseFloat(percent.toFixed(total >= 100 ? 0 : 1));
-                            $(coursebox).find('.totalProgress')[0].innerText = `학습진도 ${total}%`;
+                            $(coursebox).find('.totalProgress')[0].innerText = `진도율 ${total}%`;
                             $(coursebox).find('.totalProgress')[0].style.background = `linear-gradient(to right, #004D80 ${total}%, #7192AC ${total}%)`;
                         }
                         
                         if(pageData.length == pageDone) lastPage = ''; // 모든 페이지 학습이 완료, 스크롤 모드로 열기
                     }
                     else if(bookCount == books.length-1){
-                        $(coursebox).find('.totalProgress')[0].innerText = `학습진도 0%`;
+                        $(coursebox).find('.totalProgress')[0].innerText = `진도율 0%`;
                     }
-
+                    
                     if(lastPage == null) lastPage = 1; //완료한 페이지가 없는 경우
                     //순차적인 학습을 위한 교재 열람조건 체크
-                    let chapCompeleteProgress = (((bookCount + 1) / 24) * 100).toFixed(2);
+                    let chapCompeleteProgress = (((bookCount + 1) / courseData[crs].books.length) * 100).toFixed(2);
                     
                     const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${cid}&book=${bid}&page=${lastPage}`;
                     const encoded = `makeroom.html?eq=${btoa(queryStr)}`;
@@ -407,19 +415,19 @@
         const courseTitle = courseData[courseId].title;
         BX.component(main.stepListTitle).appendTo(padBg).text(courseTitle + ` (${stepList.length} steps)`);
         const listBg = BX.component(main.stepStore).appendTo(padBg);
-    
+        
         let lastCompeleteChapter; // 학습진도가 100%인 최종챕터
         let bookCount = 0; 
         let appendIcon = () => {
             let book = stepList.shift();
-            const bid = book.id;
+            const bid = book.id; 
             const createIcon = (json) => {
                 bookData[bid] = json; 
                 const icon = json.icon;
-                const app = BX.component(main.stepBook).appendTo(listBg).background(`url(./lecture/icons/${icon})`);
+                const app = BX.component(main.stepBook).appendTo(listBg).backgroundImage(`url(./lecture/icons/${icon})`);
                 if(!mid) {
                     app.find('a')[0].onclick = e => {
-                        toastr.error('등록된 수강생이 아니거나 잘못된 접근입니다.');
+                        toastr.error('등록된 수강생이 아니거나 잘못된 접근입니다.', '유효하지 않은 접근');
                     }
                 }
                 else {
@@ -437,7 +445,7 @@
                         }
                     }
                     
-                    let chapCompeleteProgress = (((bookCount+1) / 24) * 100).toFixed(2);
+                    let chapCompeleteProgress = (((bookCount+1) / courseData[crs].books.length) * 100).toFixed(2);
                     const queryStr = `p_cpsubj=${crs}&bid=${groupId}&p_userid=${mid}&edustart=${crsStart}&course=${courseId}&book=${bid}&page=${openPgaeNo}`;
                     const encoded = `makeroom.html?eq=${btoa(queryStr)}`;
                     if(curProgress == 100) {
@@ -456,7 +464,7 @@
                     else {
                         app.find('a')[0].href = 'javascript:toastr.error("이전 학습을 완료한 후 진행하세요.")';
                     }
-
+                    
                     if(curProgress >= chapCompeleteProgress) {
                         $(app).addClass('studiedStepBook');
                     }
@@ -467,9 +475,9 @@
                     appendIcon();
                 } 
             }
-
-            if(!Object.keys(bookData).includes(bid)){
-                getBook(courseId, bid, json => {
+            
+            if(!Object.keys(bookData).includes(bid)){ 
+                getBook(courseId, bid, json => { 
                     createIcon(json);
                 });
             }
@@ -565,15 +573,29 @@
                 });
             }
         }
-        else if(groupId == 'reco') { //테스트환경, 계정 추가 '23. 11.
-            const testAccount = {
-                cpCourseCd : 'L018761',
-                userNm : '김철수',
-                userId: 'test1',
-                courseCd : 'E187611',
-                courseCsNo : '11',
+        else if(groupId == 'reco') { //테스트환경, 계정 추가 
+            const testAccount = [
+                {
+                    cpCourseCd : 'L018761', 
+                    userNm : '김모던',
+                    userId: 'test',
+                    courseCd : 'E187611',
+                    courseCsNo : '1',
+                },
+                {
+                    cpCourseCd : 'L019442',
+                    userNm : '김철수',
+                    userId: 'test',
+                    courseCd : 'E194421',
+                    courseCsNo : '1',
+                }
+            ];
+            const target = testAccount.filter(o => o.userId == mid && o.cpCourseCd == crs);
+            if(target.length == 1) {
+                fn(target[0]);
+            } else {
+                fn(null);
             }
-            fn(testAccount);
         }
     }
 })();

@@ -15,7 +15,9 @@ const main = {
                 kind: 'box', //하단 바
                 style : {
                     height: 50,
-                    bottom : 0,
+                    
+                    // bottom : 0,
+                    // left: 0,
                     background: 'black',
                     display: 'flex',
                 }
@@ -45,8 +47,8 @@ const main = {
     courseIcon : {
         kind: 'box',
         style: {
-            width: 300,
-            margin: '20px 40px',
+            width: '100%',
+            margin: '20px auto',
             textAlign: 'center',
         },
         children: [
@@ -65,9 +67,9 @@ const main = {
             {
                 kind: 'box',
                 style: {
-                    width: 300,
+                    width: '100%',
                     textAlign: 'center',
-                    fontSize:16,
+                    fontSize: 16,
                     color: '#0052A5',
                     marginTop: 15
                 }
@@ -92,20 +94,14 @@ const main = {
         kind:'box',
         style: {
             width: '100%',
-            padding: 20,
-            fontSize: 20,
+            padding: 15,
+            fontSize: 16,
             background: 'lightgray'
         }
     },
     stepStore: {
         kind: 'box',
-        style: {
-            width: '100%',
-            height: 'calc(100% - 70px)',
-            overflow: 'auto',
-            textAlign: 'center',
-            padding: '30px 0px'
-        }
+        className: 'stepStore',
     },
     stepBook : {
         kind: 'box',
@@ -237,8 +233,11 @@ const myPage = {
             {
                 kind: 'box',
                 style: {
-                    padding: '6px 10px 0px 10px',
-                    background: 'lightgray'
+                    padding: '6px 5px',
+                    background: 'lightgray',
+                    // display: 'flex',
+                    // justifyContent: 'space-between',
+                    // alignItems: 'center'
                 },
                 children: [
                     {
@@ -251,9 +250,10 @@ const myPage = {
                         className: 'courseTitleText',
                         text: '과정명', //
                         style: {
-                            width: 'auto',
+                            width: 'calc(100% - 40px)',
                             fontSize: 16,
-                            marginRight:10
+                            // marginRight:10,
+                            whiteSpace: 'nowrap'
                         }
                     },
                     {
@@ -265,8 +265,10 @@ const myPage = {
                             fontSize: 12,
                             background: '#B7C9D5',
                             borderRadius: 6,
-                            padding: '0px 12px',
-                            margin: '5px 5px 0px 5px'
+                            padding: '0px 8px',
+                            // margin: '5px 0px 0px',
+                            whiteSpace: 'nowrap',
+                            float: 'right'
                         }
                     },
                     {
@@ -279,8 +281,11 @@ const myPage = {
                             color: 'white',
                             background : '#7192AC',
                             borderRadius: 6,
-                            padding: '0px 12px',
-                            margin: '5px 5px 0px 5px'
+                            padding: '0px 8px',
+                            marginRight: 5,
+                            // margin: '5px 5px 0px 5px',
+                            whiteSpace: 'nowrap',
+                            float: 'right'
                         }
                     }
                 ]
@@ -302,11 +307,11 @@ const myPage = {
                         kind:'p',
                         text: 'title',
                     },
-                    {
-                        kind: 'a',
-                        text : '학습하기',
-                        className: 'studyBtn',
-                    }
+                    // {
+                    //     kind: 'a',
+                    //     text : '학습하기',
+                    //     className: 'studyBtn',
+                    // }
                 ]
             },
             {
@@ -336,7 +341,7 @@ const myPage = {
                             marginTop: 2,
                             borderRadius: 8,
                             overflow: 'hidden',
-                            width: 'calc(100% - 50px)'
+                            width: 'calc(100% - 50px - 80px)'
                         },
                         children: [
                             {
@@ -344,6 +349,11 @@ const myPage = {
                                 className: 'progress',
                             }
                         ]
+                    },
+                    {
+                        kind: 'a',
+                        text : '학습하기',
+                        className: 'studyBtn',
                     }
                 ]
             }

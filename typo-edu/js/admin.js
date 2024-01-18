@@ -66,7 +66,8 @@
     
     let optList = [
         {text: '그룹선택', value : 'default'},
-        {text : '롯데이지러닝', value: 'lotte'}
+        {text : '롯데이지러닝', value: 'lotte'},
+        {text : '테스트', value: 'reco'}
     ];
     appendSelectBox(head, optList, selectedGroup);
 
@@ -312,7 +313,7 @@
                             groupData[doc.id] = doc.data();
                         }
                         
-                        for(let user of result) {
+                        for(let user of result) { 
                             if(Object.keys(groupData).includes(user.mid)) { //학습자
                                 appendResult(groupData[user.mid]);
                             }
@@ -321,7 +322,7 @@
                                 appendResult(user);
                             }
                         }
-                        console.log(groupData, '<<')
+                        // console.log(groupData, '<<')
                         $('.excelfileBtn').show();
                     });
                 });
@@ -606,6 +607,16 @@
                     fn(createData(matched));
                 });   
             }
+        }
+        else if(groupId == 'reco') {
+            const testList = [{
+                cpCourseCd : 'L018761',
+                userNm : '김철수',
+                userId: 'test',
+                courseCd : 'E187611',
+                courseCsNo : '1',
+            }];
+            fn(createData(testList));
         }
     }
     /**

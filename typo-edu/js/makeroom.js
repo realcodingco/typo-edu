@@ -8,16 +8,67 @@ let typingTime, record;
 let clickedRunBtn = false;
 (function() {
     initDatabase();
-    let userData, emulator, editSection, pageData, timer;
+    let userData, emulator, editSection, pageData, timer, bookType;
     let courseData, lecBooks;
     let autoSubmit; // 퀴즈자동제출 여부.
-
+    
     const setVh = () => { // 교재영역 접고 열때 화면위로 밀리는 현상 대응
         document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
         document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
+        if(bookType == 'card' && window.innerWidth > 1200) {
+            $('.lessonWindow').css('left', 'calc(50% - 600px)'); //교재가 한 가운데 오도록
+        }
+        else {
+            $('.lessonWindow').css('left', '0px');
+        }
     };
-    window.addEventListener('resize', setVh);
     setVh();
+
+    let allowPage = 0; //*** 진도체크 후, 열람가능 페이지 설정
+    const swiper = new Swiper('.swiper', {
+        init: false,
+        initialSlide: 0,
+        speed: 1000,
+        freeMode : false, 
+        // grabCursor: true,
+        allowSlideNext: false, // 기본적으로 오른쪽 스와이프는 제한, 페이지가 열린 후 부터 가능. 
+        effect: "creative",
+        activeIndex: allowPage,
+        observer: true,	// 추가
+        observeParents: true,
+        keyboard: {
+            enabled: true,
+            // onlyInViewport: true 
+        },
+        creativeEffect: { //3
+            prev: {
+              shadow: true,
+              translate: ["-20%", 0, -1],
+            },
+            next: {
+              translate: ["100%", 0, 0],
+            },
+        },
+        pagination: {
+            el: ".swiper-pagination",
+            type: "progressbar",
+        },
+        navigation: {
+            nextEl: ".swiper-button-next",
+            prevEl: ".swiper-button-prev",
+        },
+    });
+    swiper.on('init', console.log('start'));
+    swiper.on('slideChange', onSlideChange); //슬라이드 변경 이벤트
+    swiper.on('activeIndexChange', onSliderFirstMove); // 다음 페이지 넘어가기 제어 sliderFirstMove
+    swiper.on('keyPress', (swiper, keyCode) => { // 키사용시에도 슬라이드 변경 이벤트 적용
+        switch(keyCode) {
+            case 37:
+            case 39:
+                onSlideChange();
+        }
+    });
+    window.swiper = swiper;
 
     const decoded = atob(location.search.slice(4));
     const params = decoded.split('&');
@@ -35,7 +86,7 @@ let clickedRunBtn = false;
     const mid = searchParams(params, 'p_userid');
     const bookId = searchParams(params, 'book'); 
     const groupId = searchParams(params, 'bid'); 
-    const page = searchParams(params, 'page');
+    const page = searchParams(params, 'page'); 
     const quiz = searchParams(params, 'q');
     const crsStart = searchParams(params, 'edustart');
 
@@ -44,12 +95,58 @@ let clickedRunBtn = false;
     window.crsStart = crsStart;
     window.bookId = bookId;
     window.groupId = groupId;
+    window.resultByCodebtn = resultByCodebtn;
+    window.backSpaceCode = backSpaceCode;
+    window.resetTabEditor = resetTabEditor;
+    window.onSelectCodeBlock = onSelectCodeBlock;
+    window.onConsoleFromChild = onConsoleFromChild;
+    window.toggleSwipeLock = toggleSwipeLock;
+    window.showPythonResult = showPythonResult;
 
     getCrsBookData(crs, function(json) {
         courseData = json.courseData;
         lecBooks = json.bookData;
+        bookType = courseData[crs].type;
+        if(bookType == 'card') {
+            document.documentElement.style.setProperty("--fontSize", '16px');
+        }
+        document.documentElement.style.setProperty("--font", courseData[crs].font); //교재 폰트 설정 
+        document.documentElement.style.setProperty("--fontColor", courseData[crs].fontColor); //교재 폰트색 설정 
+        document.documentElement.style.setProperty("--bgColor", courseData[crs].page_bgColor); //배경색 설정
+        if(courseData[crs].page_bgImage) document.documentElement.style.setProperty("--bgimage", courseData[crs].page_bgImage);
+
+        // if(bookType != 'card') 
+        window.addEventListener('resize', setVh);
         init();
     });
+
+    /**
+     * 코드박스 제목영역 클릭이벤트 : swiper 잠금 토글기능. 
+     * @param {*} e 
+     */
+    function toggleSwipeLock(e) {
+        const title = $(e.target); 
+        if(title.prop('tagName') == 'SPAN') return;
+        if(title.hasClass('lock')) { //해제
+            toastr.options.closeButton = true;
+            toastr.options.extendedTimeOut = 60;
+            toastr.options.timeOut = 3000;
+            toastr.remove();
+            $(e.target).removeClass('lock');
+            swiper.enable();
+        }
+        else { //잠금
+            toastr.error('해제시 제목영역 클릭', '페이지 이동 잠금 활성화', {   
+                closeButton : false, //닫기버튼 없애기
+                extendedTimeOut : 0,
+                timeOut : 0,//창 계속 플러팅
+                positionClass: "toast-bottom-center",
+            });
+            $(e.target).addClass('lock');
+            swiper.disable();
+        }
+        
+    }
 
     function init(){
         if(!mid) {
@@ -109,32 +206,55 @@ let clickedRunBtn = false;
                 const consoleDiv = $('.consolewindow');
                 $('.editSection .fn-btn > :contains("play_arrow")')[0].onclick = runApp; //실행 버튼
                 window.consoleDiv = consoleDiv;
-                window.saveUserData = saveUserData;
                 window.finishChapter = finishChapter;
+                window.completeChapter = completeChapter;
                 window.runApp = runApp;
+                window.saveUserData = saveUserData;
                 
                 setTimeout(e => { //(타수-백스페이스*3) / 경과시간(초) * 60초
-                    $('.aceEditor')[0].onkeypress = e => { //
+                    $('.editSection .aceEditor')[0].onkeypress = e => { //
                         if(!typingStart) {
                             typingTime = Date.now();
                             typingStart = true;
                         }
                         typingCount++;
                     }
-                    $('.aceEditor')[0].onkeyup = e => { // 백스페이스 감지
+                    $('.editSection .aceEditor')[0].onkeyup = e => { // 백스페이스 감지
                         if(e.key == 'Backspace') {
                             typingCount--;
                         }
-                        let totalText = $('.ace_editor')[0].aceEditor.getValue().length; //입력된 전체 글자수
+                        let totalText = $('.editSection .ace_editor')[0].aceEditor.getValue().length; //입력된 전체 글자수
                         let duringtime = (Date.now() - typingTime) / 1000;
                         let typingResult = parseInt(typingCount/duringtime * 60);
                         if(!isNaN(typingResult) && typingResult > 0){
-                            $('.typingCount')[0].innerHTML = `<font size=3><b>${typingResult}</b></font> 타/분`;
+                            $('.typingCount')[0].innerHTML = `<font size=2><b>${typingResult}</b></font> 타/분`;
                         }
                     }
                 }, 500);
                 
                 BX.component(learn.lessonWindow).appendTo(editSection[0]); // 교재페이지
+                if(bookType == 'card') { //파이썬 초급인경우
+                    if(window.innerWidth > 1200) { //pc인 경우,
+                        $('.lessonWindow').css('left', 'calc(50% - 600px)');
+                        $('.lessonWindow').css('max-width', '1200px');
+                    }
+
+                    $('.lessonWindow > span:nth-child(1)').hide(); // js에디터 확대/축소 아이콘 숨기기
+                    $('.roomBg').css('height', 'var(--vh)');
+                    $('.pageTopBtn').hide();
+
+                    //불필요한 요소 감추기
+                    $('.editSection > :not(:last-child)').hide();
+                    $('.consolewindow').hide();
+                }
+                else {
+                    if(window.innerWidth > 1200) {
+                        $('.lessonBook').css('max-width', '1200px');
+                    }
+                    if(window.innerWidth < 720) {
+                        // $('.editSection').css('zoom', '0.8');
+                    }
+                }
             }
 
             //교재 붙이기
@@ -159,7 +279,66 @@ let clickedRunBtn = false;
                     } 
                     else { //진도 기록으로 
                         lessonBook(pageData, json.title).appendTo($('.lessonBook')[0]);
-                        setTimeout(checkStudied, 500);
+                        
+                        setTimeout(() => {
+                            swiper.init();
+                            checkStudied();
+                            //if(bookType == 'card' && window.innerWidth > 900) $('.lessonWindow').addClass('card');
+                        }, 500);
+                        
+
+                        $('.cardBook_pageNextBtn > div').on('click', e => { // 계속하기 버튼 동작시 다음슬라이드로 넘기기
+                            // 진도기록. 
+                            if(location.pathname.includes('makeBook')) return;
+                            if ( bookReady ) {
+                                saveUserData(e.target);
+                            }
+
+                            swiper.allowSlideNext = true;
+                            swiper.slideNext();
+                            allowPage = swiper.snapIndex;
+                            swiper.activeIndex = allowPage;
+                            swiper.allowSlideNext = false;
+                            $(e.target).parent().remove();
+                            $(swiper.clickedSlide).find('>:nth-child(1)').css('height', '100%');
+                        });
+
+                        $('.cardBook_confirmBtn > div').on('click', e => { // 확인 버튼 동작 : 카드교재 퀴즈 정답 확인 후, 슬라이드 넘기기
+                            // 진도기록. 
+                            if(location.pathname.includes('makeBook')) return;  
+                            
+                            const target = $(swiper.clickedSlide).find('.cardQuizExpBox').parent();
+                            const submited = localStorage.getItem('cardQuizSubmit');
+                            if(!submited) {
+                                const msg = box().appendTo($(swiper.clickedSlide).children()[0]).fontSize(10).textColor('red').textAlign('center').text('정답을 클릭하고 진행하세요');
+                                setTimeout(function(){$(msg).remove();}, 1200);
+                                return;
+                            }
+                            if(target[0].dataset.a == submited) { //정답확인
+                                playSound('choice');
+                                swiper.allowSlideNext = true;
+                                swiper.slideNext(); 
+
+                                let studiedPage = JSON.parse(localStorage.getItem('study_done'));
+                                if ( bookReady && !studiedPage.includes(swiper.snapIndex) ) { 
+                                    saveUserData(e.target);
+                                    studiedPage.push(swiper.snapIndex);
+                                    localStorage.setItem('study_done', JSON.stringify(studiedPage));
+
+                                    if(swiper.snapIndex > allowPage) {
+                                        allowPage = swiper.snapIndex;
+                                        swiper.activeIndex = allowPage;
+                                        swiper.allowSlideNext = false;
+                                    }
+                                }
+                            }
+                            else {
+                                const msg = box().appendTo($(swiper.clickedSlide).children()[0]).fontSize(10).textColor('aqua').textAlign('center').text('다시 생각해보세요');
+                                setTimeout(function(){$(msg).remove();}, 1200);
+                            }
+                            
+                            // $(e.target).parent().remove();
+                        });
                     }
                 })
                 .fail((xhr, status, error) => {});
@@ -168,13 +347,14 @@ let clickedRunBtn = false;
                 $('.appTitle')[0].innerText = 'New App';
                 $('.lessonWindow').addClass('play');
                 $('.editSection > :first-child').addClass('play');
-                $('.aceEditor').addClass('play');
+                $('.editSection .aceEditor').addClass('play');
                 $('.emulator').addClass('play');
             }
+
             if(!quiz){
                 const targetApp = location.hash.slice(1);
                 setTimeout(() => {
-                    const editor =  $('.ace_editor')[0].aceEditor;
+                    const editor =  $('.editSection .ace_editor')[0].aceEditor;
                     if(targetApp == 'free') {
                         $('.emulator').show();
                     }
@@ -197,6 +377,256 @@ let clickedRunBtn = false;
                 }, 500);
             }
         });
+    }
+
+    /**
+     * 탭에디터 코드블록 리셋 버튼 클릭이벤트
+     * @param {*} e 
+     */
+    function resetTabEditor(e) {
+        const codeBlock = $(swiper.clickedSlide).find('.codeBlock');
+        for(let i=0; i<codeBlock.length; i++) {
+            codeBlock[i].innerText = '';
+        }
+        $(swiper.clickedSlide).find('.codebtn').removeClass('clicked');
+        $(swiper.clickedSlide).find('.codebtn').removeAttr('data-idx');
+        const initCode = $(swiper.clickedSlide).find('.lessonTabEditor')[0].dataset.code;//localStorage.getItem('editor_initial_code', initCode);
+        $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.setValue(initCode);
+    }
+
+    /**
+     * 탭에디터 코드블록 하나씩 지우기 버튼 클릭이벤트
+     * @param {*} e 
+     */
+    function backSpaceCode(e) {
+        const codeBlocks = $(swiper.clickedSlide).find('.codeBlock');
+        const initCode = $(swiper.clickedSlide).find('.lessonTabEditor')[0].dataset.code; //초기코드
+        
+        const resetEditorValue = function(idx) {
+            $(codeBlocks[idx]).text('');
+            $(`.codebtn[data-idx="${idx}"]`).removeClass('clicked');
+            $(`.codebtn[data-idx="${idx}"]`).removeAttr('data-idx');
+            
+            //에디터 코드에 적용 : 
+            let modifyCode = initCode;
+            let count = 0;
+            let buffer = 0;
+            for(let j=0; j<initCode.length; j++) {
+                if(initCode[j] == '^') { //선택된 텍스트로 바꿔주기.
+                    const targetBtn = $(`.codebtn[data-idx="${count}"]`)[0];
+                    const txt = targetBtn ? targetBtn.innerText : '^';
+                    modifyCode = modifyCode.replaceAt(j + buffer, txt);
+                    buffer = txt.length > 1 ? buffer + txt.length - 1 : buffer;
+                    count++;
+                }
+            } 
+            $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.setValue(modifyCode);  
+        }
+        
+        for(let i=0; i<codeBlocks.length; i++) { //마지막 블록 : 차례대로 순회하다가 글자가 없는 블록을 만나면..
+            const code = $(codeBlocks[i]).text();
+            if(!code) { 
+                resetEditorValue(i-1);
+                break;
+            }
+
+            if(i == codeBlocks.length-1) { //모두 채워진 상태라면
+                resetEditorValue(i); 
+            }
+        }
+    }
+
+    /**
+     * 파이썬 코드 실행
+     */
+    function runPythonCode(codeText, mode) {
+        localStorage.setItem('_local_preview_src_', codeText);
+        const iframeSrc = './pyrunner.html?console_target=onConsoleFromChild&p=_local_once_code_&code_lang=python312&code_name=_local_preview_src_';
+        
+        if(mode == 'spreadsheet') { // 스프레드시트 실행모드인 경우,
+            const runBox = BX.component(lesson.spreadsheetRunBox).appendTo($('.swiper-slide-active > :nth-child(1)')[0]);
+            $(runBox).find('iframe')[0].src = iframeSrc;
+
+            setTimeout(()=> { 
+                const tableHeight = $(runBox).find('iframe').contents().find('#view div > div').height();
+                $(runBox).find('iframe')[0].height = tableHeight;
+                $(runBox).css('opacity', 1);
+                $('.swiper-slide-active > :nth-child(1)').animate({
+                    scrollTop: $('.swiper-slide-active > :nth-child(1)')[0].scrollHeight
+                }, 400);
+
+                if(window.innerWidth < 900) { // 셀 박스 편집되지 않도록 : 모바일에서 키보드자판 생성 
+                    const cellbox = $(runBox).find('iframe').contents().find('#view div > div > span[contenteditable=true]');
+                    // $(cellbox).attr('contenteditable', 'false');
+                }
+                
+            }, 500);
+            
+            
+        }
+        else {
+            const runBox = BX.component(lesson.defaultRunBox).appendTo($('.swiper-slide-active > :nth-child(1)')[0]);
+            $(runBox).find('iframe')[0].src = iframeSrc;
+            $(runBox).find('iframe')[0].height = 0;
+        }
+       
+    }
+
+    /**
+     * 코드블록을 선택했을 때 클릭이벤트
+     * @param {*} e 
+     * @returns 
+     */
+    function onSelectCodeBlock(e){
+        const selectedCode = e.target.innerText;
+        if($(e.target).hasClass('clicked')) { //이미 클릭된 버튼은 미작동
+            return;
+        }
+
+        //codeBlock에 텍스트 넣기. 클릭된 박스는 클릭 disable 글자 감추기
+        const target = $(swiper.clickedSlide).find('.codeBlock');
+        for(let i=0; i<target.length; i++) {
+            if(!$(target[i]).text()) { // 첫번째 빈 블록에 텍스트 채우기, 차례대로
+                $(target[i]).text(selectedCode);
+                $(e.target).addClass('clicked');
+                e.target.dataset.idx = i;
+                break;
+            }
+        }
+        //에디터 코드도 변경 : 클릭한 코드만 ^ 위치로..replace
+        const arr = $('.swiper-slide-active .playCodeBox').children();
+        let totalCodeText = '';
+        for(let line=0; line<arr.length; line++) {
+            totalCodeText += arr[line].innerText + '\n';
+        }
+        let prevTxt = $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.getValue();
+        prevTxt = prevTxt.replace("^", selectedCode);
+        $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.setValue(prevTxt);
+        
+    }
+
+    /**
+     * 탭 에디터 코드블록 조합 후 실행 버튼 클릭이벤트
+     * @param {*} e 
+     * @returns 
+     */
+    function resultByCodebtn(e){
+        //다음 슬라이드 넘기기
+        const target = $(swiper.clickedSlide).find('.codeBlock');
+        let incorrect = 0;
+        let empty = 0;
+        for(let i=0; i<target.length; i++) {
+            if(target[i].innerText != target[i].dataset.a){ 
+                incorrect++;
+            }
+            if(target[i].innerText == '') empty++;
+        }
+        
+        if(empty > 0) {
+            const msg = box().appendTo($(swiper.clickedSlide).children()[0]).fontSize(10).textColor('aqua').textAlign('center').text('코드블록을 완성하고 다시 시도하세요.');
+            setTimeout(function(){$(msg).remove();}, 1200);
+            return;
+        }
+
+        if(incorrect > 0) { //틀림
+            const msg = box().appendTo($(swiper.clickedSlide).children()[0]).fontSize(10).textColor('aqua').textAlign('center').text('다시 생각해보세요');
+            setTimeout(function(){$(msg).remove();}, 1200);
+        }
+        else {// 정답임. 결과 보여주고, 계속하기 버튼 노출
+            if(e.target.dataset.run == 'true') { 
+                const runMode = e.target.dataset.mode;
+                const curSlide = $('.swiper-slide-active > :nth-child(1)')[0];
+                const outputWin = $(curSlide).find('.outputWindow').length == 0 ? BX.component(lesson.outputWindow).appendTo(curSlide) : $('.outputWindow');
+                $(outputWin).children()[0].dataset.mode = runMode;
+                //배경코드가 있으면 합치기
+                const bgcode = $(swiper.clickedSlide).find('.playCodeBox')[0].dataset.bgcode;
+                let codeText = $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.getValue();
+                
+                const finalcode = bgcode ? bgcode + codeText : codeText;
+                runPythonCode(finalcode, runMode);
+            }
+            playSound('choice');
+            switchBtn();
+        }
+    }
+
+    function showPythonResult(e) { //재실행이므로.. 기존 결과는 초기화
+        $(swiper.clickedSlide).find('.outputWindow :nth-child(2)').empty();
+        $(swiper.clickedSlide).find('.spreadsheetRun').remove();
+        //배경코드가 있으면 합치기
+        const bgcode = $(swiper.clickedSlide).find('.playCodeBox')[0].dataset.bgcode;
+        let codeText = $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.getValue();
+        
+        const mode = $(swiper.clickedSlide).find('.outputWindow :nth-child(1)')[0].dataset.mode;
+        
+        const finalcode = bgcode ? bgcode + codeText : codeText;
+        runPythonCode(finalcode, mode);
+        playSound('choice');
+    }
+
+    /**
+     * 계속하기 버튼 숨기기
+     * @param {*} target 
+     */
+    function hideContinueBtn(target) {
+        const continuebtn = $(target).find('.cardBook_pageNextBtn');
+        continuebtn.hide();
+        $(swiper.slides[swiper.snapIndex]).find('>:nth-child(1)').css('height', '100%');
+    }
+
+    /**
+     * 계속하기 버튼 노출, 코드블록버튼 상자 숨기기
+     */
+    function switchBtn() {
+        const continuebtn = $(swiper.clickedSlide).find('.cardBook_pageNextBtn');
+        continuebtn.show();
+        $(swiper.slides[swiper.snapIndex]).find('>:nth-child(1)').css('height', 'calc(100% - 70px)');
+        $(swiper.clickedSlide).find('.codeBtnBox').addClass('off');
+    }
+
+    /**
+     * 슬라이드 넘어갈때 넘기기 허용 설정
+     */
+    function onSliderFirstMove() {  
+        if(swiper.snapIndex < allowPage) {
+            swiper.allowSlideNext = true; 
+        }
+        else {
+            swiper.allowSlideNext = false; 
+        }
+    }
+
+    /**
+     * 교재 슬라이드가 바뀔때마다 실행되는 이벤트 
+     */
+    function onSlideChange() { 
+        const iframe = $(swiper.clickedSlide).find('iframe');
+        if(iframe.length != 0) {  //교재 내 타이머 clearTimer를 위한.
+            iframe[0].remove();
+        }
+
+        const afterChangeSlide = $(swiper.slides[swiper.snapIndex]);
+        //playSound('swipebook');
+        localStorage.removeItem('cardQuizSubmit');
+        $('.cardQuizExpBox').removeClass('selected');
+
+        const targetEditor = afterChangeSlide.find('.ace_editor')[0]; 
+        if(targetEditor){
+            const initCode = targetEditor.aceEditor.getValue();
+            localStorage.setItem('editor_initial_code', initCode);
+        }
+        
+        // 페이지 선택상자도 같이..
+        $('.slidePagenation')[0].options[swiper.snapIndex].selected = true;
+        
+        const codebtnBox = afterChangeSlide.find('.codeBtnBox'); 
+        if(codebtnBox.length > 0 && !codebtnBox.hasClass('off')) hideContinueBtn(swiper.slides[swiper.snapIndex]);
+
+        //넘겨진 페이지의 재생중인 동영상은 정지
+        const studyVideo = $(swiper.clickedSlide).find('.video-js')[0];
+        if($(studyVideo).hasClass('vjs-playing')) {
+            videojs.getPlayer(studyVideo.id).pause();
+        }
     }
 
     /**
@@ -279,7 +709,7 @@ let clickedRunBtn = false;
         clearInterval(timer);
         $('.quizTimer')[0].style.animationPlayState = 'paused';
         let solve = userData.course[crs].quiz.solve? userData.course[crs].quiz.solve.detail : [];
-
+        
         const restart = () => {
             let testTime = userData.course[crs].quiz.testTime;
             let minute = Math.floor(testTime / 60);
@@ -298,11 +728,12 @@ let clickedRunBtn = false;
 
             let lastsubmitData = {};
             lastsubmitData[`course.${crs}.quiz.score`] = score;
+            lastsubmitData[`course.${crs}.quiz.solve.detail`] = solve; //풀이기록도 저장...
             lastsubmitData[`course.${crs}.quiz.solve.correctCount`] = correct;
             lastsubmitData[`course.${crs}.quiz.solve.incorrectCount`] = incorrect;
             lastsubmitData[`course.${crs}.quiz.solve.time`] = userData.course[crs].quiz.solve.time;
             updateUserData({groupId: groupId, mid : mid, data: lastsubmitData, crsStart: crsStart}, function(){
-                toastr.success('최종 제출되었습니다.');
+                toastr.success('최종 제출되었습니다.', '제출 완료');
                 //버튼 숨기고, 제출되었다 안내하고 모든 버튼 클릭 이벤트 없앰
                 $(e.target).hide();
                 $('.quizexamples').each(function(i, exp) {
@@ -331,7 +762,7 @@ let clickedRunBtn = false;
                     }
                 } 
                 else { //  푼게 없잖아
-                    toastr.error('문제를 풀고, 다시 시도하세요.');
+                    toastr.error('제출할 내용이 없습니다.<br>모든 문제를 풀고 다시 시도하세요.');
                     restart();
                 }
             }
@@ -392,13 +823,23 @@ let clickedRunBtn = false;
         $('.nav-y').hide();
     }
 
+    String.prototype.replaceAt = function(index, replacement) {
+        if (index >= this.length) {
+            return this.valueOf();
+        }
+     
+        var chars = this.split('');
+        chars[index] = replacement;
+        return chars.join('');
+    }
+
     /**
      * 에디터 리셋 버큰 클릭 이벤트
      * @param {*} e 
      */
     function refreshApp(e) {
         // 교재모드인 경우, 코드기록 삭제, 배경코드 출력
-        const editor =  $('.ace_editor')[0].aceEditor;
+        const editor =  $('.editSection .ace_editor')[0].aceEditor;
         const codeId = $('.appTitle')[0].id;
         const pageId = $('.appTitle')[0].getAttribute('data-pid');
 
@@ -440,16 +881,20 @@ let clickedRunBtn = false;
     /**
      * 코드 실행 버튼 클릭 이벤트
      */
-    function runApp(e) {
+    function runApp(e) { 
         typingCount = 0;
         typingStart = false;
         $('.appWindow').empty();
-        const editor =  $('.ace_editor')[0].aceEditor;
+        const editor =  $('.editSection .ace_editor')[0].aceEditor;
         const targetApp = location.hash.slice(1);
         let code = editor.getValue();
         if(targetApp && targetApp != 'free') {
             BX.components[targetApp].practice().appendTo($('.appWindow')[0]);
         } 
+        
+        if(e && window.innerWidth < 900 && $('.emulator').hasClass('active')) { 
+            $('.emulator').show();
+        }
              
         playSound('effectsound1');
         consoleDiv.empty();
@@ -512,6 +957,7 @@ let clickedRunBtn = false;
                 if(unit.comp == 'title') { //퀴즈는 페이지 아이디 감추기
                     $(created).find('> *')[0].style.display = 'none';
                 }
+
                 // 퀴즈교재는 간격 4줄로 고정
                 for(var i=0; i<4; i++) {
                     BX.component(lesson.enter).appendTo(wrap);
@@ -550,8 +996,31 @@ let clickedRunBtn = false;
         if(!userData.course[crs].quiz.solve) userData.course[crs].quiz.solve = {};
         if(!userData.course[crs].quiz.solve.detail) userData.course[crs].quiz.solve.detail = new Array(20).fill({});
         userData.course[crs].quiz.solve.detail[target.dataset.q-1] = solveDetail;
+        
     }
+    
+    let wheeltab = 0;
+    function wheelUpDown(e) {
+        if($('.lessonBook').is(":animated")) return;
+        const curScrollPosition = $('.lessonBook').scrollTop();
+        let section = ((curScrollPosition/window.innerHeight) / 1).toFixed(1);
 
+        if(Math.trunc(section)+1 != wheeltab) {
+            wheeltab = Math.trunc(section);
+        }
+
+        if(e.target.id == 'tabDOWN' ) {
+            // if(page == 4) return;
+            wheeltab++;
+        } else if(e.target.id == 'tabUP') {
+            // if(page == 1) return;
+            wheeltab--;
+        }
+        var posTop = (window.innerHeight - 80) * wheeltab;
+        $('.lessonBook').animate({scrollTop : posTop}, 'fast');
+    
+        
+    }
     /**
      * pageData로 교재 생성
      * @param {object} pageData 배열
@@ -559,9 +1028,12 @@ let clickedRunBtn = false;
      * @returns 생성된 페이지 box
      */
     function lessonBook(pageData, title) {
-        const b = box();
+        const b = box().paddingTop(4);
         const book = pageData;
+        const lessonBook = $('.lessonBook');
         document.title = title;
+
+        // 상단에 페이지 내비게이션 표시 : 모던자바스크립트
         const appendNav = function () {
             const navBg = $('.bookNav'); 
             for(let pages of book) {
@@ -573,6 +1045,36 @@ let clickedRunBtn = false;
                 const tag = BX.component(learn.navLabel).appendTo(btn);
                 tag[0].innerText = Object.values(pages)[0].title; 
             }
+        }
+
+        // 상단에 slide 넘기기 : 나데사초급3.12
+        const appendSlidePagenation = function() {
+            const navBg = $('.bookNav'); 
+            const selectBox = BX.component(lesson.slidePagenation).appendTo(navBg[0]);
+            
+            let count = 0;
+            for(let pages of book) { //선택상자 옵션
+                const pageId = Object.keys(pages)[0];
+                const pageTitle = count > 0 ? `p${count}. ` + pages[pageId].title : pages[pageId].title;
+                const opt = new Option(pageTitle, count);
+                selectBox[0].appendChild(opt);
+                count++;
+            }
+            // 페이지 선택상자 이벤트
+            $(selectBox).change(function() { 
+                const page = this.value * 1;
+                //swiper.slideTo(0);
+                swiper.slideTo(page);
+                if(!swiper.enabled) {
+                    toastr.error('페이지 잠금상태입니다.');
+                    selectBox[0].options[swiper.snapIndex].selected = true;
+                }
+                else if(swiper.snapIndex != page) { //유효하지 않은 페이지 넘김의 경우, 학습진행으로 열리지 않은 페이지
+                    toastr.info('학습진행이 되지 않은 페이지로 바로가기 할 수 없습니다.');
+                    //선택옵션을 현재 슬라이드에 맞게 
+                    selectBox[0].options[swiper.snapIndex].selected = true;
+                }
+            });
         }
 
         const openPage = function(page) {
@@ -595,22 +1097,27 @@ let clickedRunBtn = false;
                 loading = BX.component(learn.loading).appendTo($('.lessonWindow')[0]);
             }
             
-            const wrap = box().appendTo(b);
-            for(let [idx, unit] of contents.entries()) {
-                const created = createComponent(unit).appendTo(wrap);
-                
+            const wrap = box().appendTo(b).size('100%');
+            if(bookType == 'card') wrap.background($('.lessonWindow').color());
+            const contentBox = box().appendTo(wrap).height('calc(100% - 70px)').overflow('auto').paddingBottom(100);
+            for(let [idx, unit] of contents.entries()) { 
+                const created = createComponent(unit).appendTo(['quizConfirmBtn', 'nextBtn'].includes(unit.comp) ? wrap : contentBox);
                 if(unit.comp == 'title') { //페이지 아이디 붙이기 
                     $(created).find('.pageidtag')[0].innerHTML = pageId;
                 }
 
-                unit.enter = Number(unit.enter)
+                unit.enter = Number(unit.enter);
                 if(unit.enter) { //줄내림
                     for(var i=0; i<unit.enter; i++) {
-                        BX.component(lesson.enter).appendTo(wrap);
+                        BX.component(lesson.enter).appendTo(contentBox);
                     }
                 }
+                
+                if(bookType && bookType == 'card') { //card type이면 필요없음. 
+                    continue;
+                }
 
-                if( !scroll && idx == contents.length-1) {
+                if(!scroll && idx == contents.length-1) { // 페이지 넘김 버튼 영역 
                     const pageMoveBtn = BX.component(lesson.nextBtn).appendTo(wrap);
                     pageMoveBtn.children()[0].onclick = movePrevPage;
                     pageMoveBtn.children()[1].onclick = moveNextPage;
@@ -621,7 +1128,9 @@ let clickedRunBtn = false;
                         pageMoveBtn.children()[1].style.display = 'none';
                     }
                 }
+                
             }
+            
             
             if(!scroll) {
                 setTimeout( () => {
@@ -629,25 +1138,32 @@ let clickedRunBtn = false;
                     $('.lessonBook')[0].style.opacity = 1;
                 }, 2000);
             }
+            else if(bookType == 'card') { //scroll(전체페이지를 열거하는..)인 경우, card type은 모두 scroll로 열리도록 
+                $('.lessonBook').addClass('swiper');
+                $(b).addClass('swiper-wrapper');
+                $(wrap).addClass('swiper-slide');
+                box().appendTo(b)[0].className = 'swiper-pagination';
+            }
         }
 
-        //location parameter page 유무에 따라 페이지 OR 스크롤 모드 분기
-        if(page) {
-            appendNav();
-            openPage(page);
-        } 
-        else {
+        //location parameter page 유무에 따라 페이지 OR 스크롤 모드 분기 
+        if(!page || bookType == 'card') {
             const loading = BX.component(learn.loading).appendTo($('.lessonWindow')[0]);
             for(let page=0; page<book.length; page++) {
                 drawPage(Object.values(book[page])[0].content, Object.keys(book[page])[0], true);
 
-                if(page == book.length-1) {
+                if(page == book.length-1) { //마지막 페이지까지 생성 후, 교재 노출
                     setTimeout( () => {
                         loading.remove();
                         $('.lessonBook')[0].style.opacity = 1;
                     }, 2000);
                 }
             }
+            if(bookType == 'card') appendSlidePagenation();
+        }
+        else {
+            appendNav(); 
+            openPage(page);
         }
 
         return b;
@@ -678,7 +1194,7 @@ let clickedRunBtn = false;
             bookData[pageid].time = Date.now();
         }
         record.progress[bookId] = bookData;
-        userData.course[crs] = record;
+        userData.course[crs] = record; 
 
         if(!justData) {  //해당 페이지의 내용만..
             updateProgressData(`course.${crs}.progress.${bookId}.${pageid}`, bookData[pageid]);
@@ -726,7 +1242,7 @@ let clickedRunBtn = false;
         
         //체크 기록 가져오기
         let studied = [];
-        if(page) { //페이지 모드
+        if(bookType != 'card' && page) { //페이지 모드
             const pageId = $('.pageidtag')[0].innerText;
             if(data[pageId]) studied = data[pageId].clicked;
         }
@@ -735,37 +1251,103 @@ let clickedRunBtn = false;
                 studied = studied.concat(data[pagdId].clicked);
             });
         }
-        
+
         let lastEl = [];
         if(studied) {
-            const hidebox = $('.hideb');
-            hidebox.each(function(i, b) {
-                const hideTarget = $(b).children()[0];
-                if(studied.includes(hideTarget.id)) {
-                    hideTarget.click();
-                    lastEl.push(hideTarget);
+            if(bookType == 'card') { // 카드형(모바일) 교재 진도체크 요소들
+                // allowPage를 최종 페이지로 결정하고, 해당 슬라이드로 열어주기.. 학습이 완료된 상태이면.. 
+                //$('.cardBook_pageNextBtn > div') 모든 슬라이드에서..
+                let studiedPage = []; 
+                const totalSlides = $('.swiper-slide').length;
+                
+                $('.swiper-slide').each(function(idx, el){
+                    const nextBtn = $(el).find('.cardBook_pageNextBtn > div');
+                    const confirmBtn = $(el).find('.cardBook_confirmBtn > div');
+
+                    if(nextBtn.length > 0 && studied.includes(nextBtn[0].id)) {
+                        studiedPage.push(idx);
+                        $(nextBtn).parent().remove();
+                        $(el).find('>:nth-child(1)').css('height', '100%');
+                    }
+                    if(confirmBtn.length > 0 && studied.includes(confirmBtn[0].id)) {
+                        studiedPage.push(idx);
+                    }
+                });
+                const completeChapBtn = $('.cardBook_completeBtn > div');
+                
+                if(studied.includes(completeChapBtn[0].id)) { //챕터 완료면..
+                    studiedPage.push(totalSlides-1);
+                    $(completeChapBtn).parent().remove();
                 }
-            });
+                
+                let skip = 0;
+                for(var i=0; i<studiedPage.length; i++) {
+                    if(studiedPage[i] != i) {
+                        skip = i;
+                        break;
+                    }
+                }
+                localStorage.setItem('study_done', JSON.stringify(studiedPage));
+                
+                let finalPageIdx;
+                if(studiedPage.length == 0 ){ //학습기록이 없으면 첫페이지에서 시작.
+                    finalPageIdx = 0;
+                }
+                else if(skip != 0) {
+                    finalPageIdx = skip;
+                }
+                else {
+                    finalPageIdx = Math.max(...studiedPage) + 1;
+                }
+                
+                allowPage = studiedPage.length != 0 ? Math.max(...studiedPage) + 1 : 0; //열람가능한 페이지 설정
+                swiper.activeIndex = allowPage;
+                
+                if(totalSlides != finalPageIdx) { //학습이 완료되지 않은 상태.
+                    swiper.slideTo(0);
+                    swiper.slideTo(finalPageIdx);
+                    $('.slidePagenation')[0].options[finalPageIdx].selected = true;
+                    const codebtnBox = $(swiper.slides[finalPageIdx]).find('.codeBtnBox'); 
+                    if(codebtnBox.length > 0 && !codebtnBox.hasClass('off')) hideContinueBtn(swiper.slides[swiper.snapIndex]);
+                }
+            }
+            else { //모던자바 진도체크 요소들
+                const hidebox = $('.hideb');
+                hidebox.each(function(i, b) {
+                    const hideTarget = $(b).children()[0];
+                    if(studied.includes(hideTarget.id)) {
+                        hideTarget.click();
+                        lastEl.push(hideTarget);
+                    }
+                });
 
-            const checks = $('input.read_check');
-            checks.each(function(i, b) {
-                if(b.type == 'checkbox' && studied.includes(b.id)){
-                    b.click();
-                    b.disabled = true;
-                    $($(b).parent()[0]).removeClass('clickRequired');
-                    lastEl.push($(b).parent()[0]);
-                }   
-            });    
+                const checks = $('input.read_check');
+                checks.each(function(i, b) {
+                    if(b.type == 'checkbox' && studied.includes(b.id)){
+                        b.click();
+                        b.disabled = true;
+                        $($(b).parent()[0]).removeClass('clickRequired');
+                        lastEl.push($(b).parent()[0]);
+                    }   
+                });  
+            }
         }
-        // 페이지 체크요소가 모두 완료된 상태가 아니면, 마지막 체크 요소 위치로 스크롤
-        if(isReadAll().length != 0 && page && lastEl.length > 0) { 
-            const position = lastEl.map(o => {
-                return o.getBoundingClientRect().top;
-            });
 
-            const target = lastEl[position.indexOf(Math.max(...position))];
-            target.scrollIntoView({block: 'start'});
+        if(bookType == 'card') {
+
         }
+        else {
+            // 페이지 체크요소가 모두 완료된 상태가 아니면, 마지막 체크 요소 위치로 스크롤
+            if(isReadAll().length != 0 && page && lastEl.length > 0) { 
+                const position = lastEl.map(o => {
+                    return o.getBoundingClientRect().top;
+                });
+
+                const target = lastEl[position.indexOf(Math.max(...position))];
+                target.scrollIntoView({block: 'start'});
+            }
+        }
+        
 
         bookReady = true;
     }
@@ -854,6 +1436,41 @@ let clickedRunBtn = false;
     }
 
     /**
+     * bookType 'card'인 교재의 챕터 완료 버튼 클릭이벤트
+     * @param {*} e 
+     * @returns 
+     */
+    function completeChapter(e) {
+        if(location.pathname.includes('makeBook')) return; // 교재편집 페이지에서는 제외
+        
+        saveUserData(e.target);
+        calcProgress(courseData, lecBooks, crs, userData, function(result) { 
+            const progress = result; 
+
+            //중간진도 전송
+            postProgress(crsStart.substring(0, 4), record.courseCd, record.courseCsNo, mid, progress, function(done){
+                if(!done.ok) {
+                    $(finishCheckBox).prop('checked', false);
+                    toastr.error('진도기록에 실패했습니다. 다시 시도하세요.');
+                    return;
+                }
+
+                console.log(done, 'response');
+                userData.course[crs].totalProgress = progress; // 진도전송시마다 totalProgress 업데이트
+                const refData = {};
+                refData[`course.${crs}.totalProgress`] = progress;
+                updateUserData({groupId: groupId, mid : mid, data: refData, crsStart: crsStart});
+                
+                toastr.success('잠시 후, 메인페이지로 이동합니다.', '학습완료 확인');
+                setTimeout(()=> {
+                    const queryStr = `p_cpsubj=${crs}&p_userid=${mid}&edustart=${crsStart}&bid=${groupId}`;
+                    location.href = `index.html?eq=${btoa(queryStr)}#list`;
+                }, 3000);
+            });
+        });
+    }
+
+    /**
      * 롯데 이지러닝 중간진도 전송
      * @param {*} year 
      * @param {*} courseCd 
@@ -866,7 +1483,7 @@ let clickedRunBtn = false;
     function postProgress(year, courseCd, courseCsNo, mid, progress, fn) {
         // 그룹이 롯데가 아니거나, 수강기간이 아니거나 테스트 기간에는 진도 전송되지 않도록
         if(groupId != 'lotte' || !isTakingClass(crsStart) || parseInt(crsStart) < 20230501) { 
-            fn && fn({ok: true});
+            fn && fn({ok: true}); 
             return;
         }
 
@@ -887,6 +1504,68 @@ let clickedRunBtn = false;
             body: JSON.stringify(param),
         })
         .then((response) => fn && fn(response));
+    }
+
+    var errorLineGap = 1;
+    function onConsoleFromChild(msg) { 
+        if(msg.includes('Error:')) {
+            if(msg.includes('NameError:')) {
+                msg = '에러: 정의되지 않은 변수 또는 함수<br/>' + msg;
+            }
+            else if(msg.includes('SyntaxError:')) {
+                msg = '문법 에러: ' + msg;
+            }
+            else if(msg.includes('IndentationError:')) {
+                msg = '들여쓰기 에러: ' + msg;
+            }
+            else if(msg.includes('TypeError:')) {
+                msg= '데이터 유형 에러: ' + msg;
+            }
+            else {
+                msg = '에러: ' + msg;
+            }
+            
+            var token = '__main__", line ';
+            var idx = msg.indexOf(token);
+            if(idx > -1) {
+                var idx2 = msg.indexOf('\n', idx);
+                var line = msg.substring(idx+token.length, idx2);
+                line = parseInt(line) - errorLineGap;
+                // msg = msg.substring(0, idx+token.length) + line + msg.substring(idx2);
+                msg = msg.substring(0, idx) + line + '라인을 확인하세요.' + msg.substring(idx2);
+            }
+        }
+        
+        if(msg.includes('일시적으로 실시간 환율정보를 불러올 수 없습니다.')) {
+            return;
+        }
+
+        if(typeof msg == 'string' && msg.length > 0 && msg[msg.length-1] != '\n') {
+            msg += '<br/>';
+        }
+        msg = msg.replaceAll(' ', '&nbsp;');
+        msg = msg.replaceAll('\n', '<br/>');
+
+        //outputWindow 노출..
+        const curSlide = $('.swiper-slide-active > :nth-child(1)')[0]; 
+        const outputWin = $(curSlide).find('.outputWindow').length == 0 ? BX.component(lesson.outputWindow).appendTo(curSlide) : $(curSlide).find('.outputWindow');
+        const printBox = $(outputWin).find('>:nth-child(2)');
+
+        const result = box().appendTo(printBox[0]).html(msg).textColor(msg.includes('에러')?'#e65800':'white').borderBottom('0.7px dashed gray').padding('5px 0px');
+        if(msg.startsWith('<')) {
+            msg = msg.replaceAll('<br/>', '\n');
+            msg = msg.replaceAll('&nbsp;', ' ');
+            result.text(msg);
+        }
+        else {
+            result.html(msg);
+        }
+        
+
+        $('.swiper-slide-active > :nth-child(1)').animate({
+            scrollTop: $('.swiper-slide-active > :nth-child(1)')[0].scrollHeight
+        }, 400);
+
     }
 
     /**

@@ -454,6 +454,7 @@ const edit = {
                     {
                         kind: 'button',
                         className : 'savePageButton',
+                        "data-clipboard-action" :"copy",
                         onClick : 'savePageData',
                         text : '저장',
                         style: {
@@ -482,7 +483,9 @@ const edit = {
         ]
     },
     styleUnit: {
-        kind:'box',
+        kind:'button',
+        className: 'favorite',
+        "data-clipboard-action" :"copy",
         style: {
             padding: 5
         }
@@ -604,8 +607,23 @@ const edit = {
                     },
                     {
                         kind: 'option',
+                        html: '동영상',
+                        value : 'video'
+                    },
+                    {
+                        kind: 'option',
                         html: '체크박스',
                         value : 'check'
+                    },
+                    {
+                        kind: 'option',
+                        html: '퀴즈확인 버튼',
+                        value : 'quizConfirmBtn'
+                    },
+                    {
+                        kind: 'option',
+                        html: '다음 버튼',
+                        value : 'nextBtn'
                     },
                     {
                         kind: 'option',
@@ -614,8 +632,18 @@ const edit = {
                     },
                     {
                         kind: 'option',
+                        html: '학습완료 버튼-card',
+                        value : 'cardCompleteBtn'
+                    },
+                    {
+                        kind: 'option',
                         html: '퀴즈(교재삽입)',
                         value : 'quiz'
+                    },
+                    {
+                        kind: 'option',
+                        html: '퀴즈(보기)-card',
+                        value : 'cardQuiz' 
                     },
                     {
                         kind: 'option',
@@ -651,6 +679,11 @@ const edit = {
                         kind: 'option',
                         html: '링크',
                         value : 'link'
+                    },
+                    {
+                        kind: 'option',
+                        html: '탭에디터 코드상자',
+                        value: 'tabEditor'
                     },
                     {
                         kind: 'option',
@@ -1160,7 +1193,133 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
             edit.edit, edit.styleBtn,
         ]
     },
+    video: { //비디오 입력 폼
+        kind : 'box',
+        children: [
+            {
+                kind: 'input',
+                name: 'src',
+                placeholder: '경로',
+                style: {
+                    width: '90%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+        ]
+    },
+    tabEditor : { // 탭으로 사용하는 코드 에디터
+        kind: 'box',
+        children : [
+            {
+                kind: 'input',
+                name: 'type',
+                placeholder: '유형(read,btn,keyboard)',
+                style: {
+                    width: '20%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'isRun',
+                //text: 'true',
+                placeholder: '실행여부',
+                style: {
+                    width: '20%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'mode',
+                //text: 'spreadsheet',
+                placeholder: '실행모드',
+                style: {
+                    width: '20%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'height',
+                placeholder: '높이',
+                style: {
+                    width: '20%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'input',
+                name: 'title',
+                text: 'script.py',
+                placeholder: '코드제목',
+                style: {
+                    width: '95%',
+                    margin: 5,
+                    outline: 'none',
+                }
+            },
+            {
+                kind: 'textarea',
+                name:'text',
+                placeholder: '코드 입력',
+                spellcheck: 'false',
+                style: {
+                    width: '95%',
+                    height: 150,
+                    margin: '5px auto',
+                    padding: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'textarea',
+                name: 'answer',
+                placeholder: '정답코드',
+                style: {
+                    width: '95%',
+                    margin: 5,
+                    outline: 'none',
+                    height: 80,
+                }
+            },
+            {
+                kind: 'textarea',
+                name: 'btns',
+                placeholder: '코드버튼',
+                style: {
+                    width: '95%',
+                    margin: 5,
+                    outline: 'none',
+                    height: 80,
+                }
+            }
+        ]
+    },
+    quizConfirmBtn: {
+        kind: 'box',
+        children: [
+            edit.progressId
+        ]
+    },
+    nextBtn: {
+        kind: 'box',
+        children: [
+            edit.progressId
+        ]
+    },
     completeBtn: { // 학습완료 버튼 폼
+        kind: 'box',
+        children: [
+            edit.progressId,
+        ]
+    },
+    cardCompleteBtn: {
         kind: 'box',
         children: [
             edit.progressId,
@@ -1229,7 +1388,7 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
             edit.progressId,
             {
                 kind: 'input',
-                name: 'text',
+                name: 'src',
                 placeholder: '숨길 텍스트',
                 style: {
                     width: '90%',
@@ -1476,6 +1635,7 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
                 kind: 'input',
                 name : 'width',
                 placeholder: '너비',
+                text: 400,
                 style: {
                     width: '30%',
                     margin: 5,
@@ -1515,6 +1675,94 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
         kind: 'box',
         children: [
             edit.quizBtn
+        ]
+    },
+    cardQuiz: {
+        kind: 'box',
+        children: [ // 텍스트, 문항번호
+            // {
+            //     kind: 'input',
+            //     name: 'quizNo',
+            //     placeholder: '문항번호',
+            //     style: {
+            //         width: '45%',
+            //         margin: 5,
+            //         outline: 'none'
+            //     }
+            // },
+            {
+                kind: 'input',
+                name: 'answer',
+                placeholder: '정답',
+                style: {
+                    width: '45%',
+                    margin: 5,
+                    outline: 'none'
+                }
+            },
+            // {
+            //     kind: 'textarea',
+            //     name: 'question',
+            //     placeholder: '문제 입력',
+            //     spellcheck: 'false',
+            //     style: {
+            //         width: '95%',
+            //         height: 70,
+            //         margin: '5px auto',
+            //         padding: 5,
+            //         outline: 'none'
+            //     }
+            // },
+            {
+                kind: 'box',
+                className: 'finalQuizExample',
+                children: [
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기1',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기2',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기3',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    },
+                    {
+                        kind: 'textarea',
+                        placeholder: '보기4',
+                        style: {
+                            width: '95%',
+                            height: 40,
+                            margin: '5px auto',
+                            padding: 5,
+                            outline: 'none'
+                        }
+                    }
+                ]
+            }
         ]
     },
     quizQuestion: { //퀴즈 응시용 문제 입력폼

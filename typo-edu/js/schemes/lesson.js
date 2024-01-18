@@ -47,6 +47,17 @@ const lesson = {
             
         ]
     },
+    video : {
+        kind: 'video',
+        className: 'recovideo',
+        controls : '',
+        width: '100%',
+        preload: "metadata"
+    },
+    videojs: {
+        kind: 'video',
+        class: 'video-js vjs-big-play-centered'
+    },
     text : {
         kind : ''
     },
@@ -170,6 +181,16 @@ const lesson = {
             }
         ]
     },
+    cardQuiz :  { // 카드타입교재 퀴즈 보기 선택
+        kind: 'box',
+        className: 'cardQuizExpBox',
+        onClick: e => {
+            $('.cardQuizExpBox').removeClass('selected');
+            $(e.target).addClass('selected');
+            const selected = $(e.target).index() + 1; //보기 번호
+            localStorage.setItem('cardQuizSubmit', selected);
+        }
+    },
     quizQuestion : { // 퀴즈응시 문제영역
         kind: 'box',
         style: {
@@ -186,7 +207,7 @@ const lesson = {
             {
                 kind: 'box', // 문제 내용 텍스트
                 style: {
-                    width: '100%',
+                    width: 'calc(100% - 55px)',
                     fontSize: 20,
                     marginTop: 5
                 }
@@ -197,7 +218,8 @@ const lesson = {
         kind: 'box',
         className: 'finalQuizExample',
         style: {
-            fontSize: 18
+            fontSize: 18,
+            marginTop: 15
         },
     },
     finalExp: { // 보기문항 개별 요소
@@ -291,7 +313,7 @@ const lesson = {
         kind: 'sub'
     },
     sup : {
-        kind: 'sup'
+        kind: 'sup',
     },
     ending : {
         kind: 'box',
@@ -304,6 +326,45 @@ const lesson = {
                 kind: 'box',
                 className :"finishPattern",
                 text : '수고하셨습니다.'
+            }
+        ]
+    },
+    cardBookCompleteBtn: {
+        kind: 'box',
+        className: 'cardBook_completeBtn',
+        children: [
+            {
+                kind: 'box',
+                text: '학습완료',
+            },
+            {
+                kind: 'p',
+                text: '* 버튼 클릭시, 학습완료로 체크되며, 메인페이지로 이동합니다.',
+                style: {
+                    marginTop: 5,
+                    fontSize: 10,
+                    color: 'aqua'
+                }
+            }
+        ]
+    },
+    cardQuizConfirmBtn: {
+        kind: 'box',
+        className: 'cardBook_confirmBtn',
+        children: [
+            {
+                kind: 'box',
+                text: '확인',
+            }
+        ]
+    },
+    cardBookNextBtn : {
+        kind : 'box',
+        className: 'cardBook_pageNextBtn',
+        children: [
+            {
+                kind: 'box',
+                text: '계속하기',
             }
         ]
     },
@@ -345,7 +406,7 @@ const lesson = {
         kind: 'box',
         style: {
             width: '100%',
-            padding: '0px 45px'
+            padding: '0px 25px'
         },
         children: [
             {
@@ -392,25 +453,194 @@ const lesson = {
     imageBox : {
         kind: 'box',
         style: {
-            widht: '100%',
-            textAlign: 'center'
+            width: '100%',
+            textAlign: 'center',
+            overflow: 'auto'
         },
         children: [
             {
                 kind : 'img',
+                className: 'lessonCompImg',
                 style: {
                     height: 'auto'
                 }
             }
         ]
     },
+    slidePagenation : {
+        kind: 'select',
+        className: 'slidePagenation'
+    },
+    spreadsheetRunBox: {
+        kind:'box',
+        className: 'spreadsheetRun',
+        children : [
+            {
+                kind: 'iframe',
+                width: '100%',
+            }
+        ]
+    },
+    defaultRunBox: {
+        kind: 'box',
+        children: [
+            {
+                kind: 'iframe'
+            }
+        ]
+    },
+    outputWindow: {
+        kind: 'box',
+        className: 'outputWindow',
+        children: [
+            {
+                kind: 'box',
+                text: 'output',
+                style: {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                },
+                children: [
+                    {
+                        kind:'span',
+                        className: 'material-symbols-outlined',
+                        text: 'replay',
+                        style: {
+                            color: 'white',
+                            fontSize: 15,
+                            margin: '3px 5px'
+                        }
+                    }
+                ],
+                onClick: 'showPythonResult' //재실행 버튼 
+            },
+            {
+                kind: 'box',
+                style: {
+                    background: '#0D2A36',
+                    color:'white',
+                    padding: '0px 8px',
+                    fontSize: 11,
+                    fontFamily: 'monospace'
+                }
+            }
+        ]
+    },
+    tabEditor : {
+        kind : 'box',
+        className:'lessonTabEditor',
+        style: {
+            width: '100%',
+            marginTop: 10
+        },
+        children: [
+            {
+                kind: 'box', //제목영역
+                onClick: 'toggleSwipeLock',
+                children: [
+                    {
+                        kind:'span',
+                        className: 'material-symbols-outlined',
+                        text: 'lock',
+                        style: {
+                            color: '#648375',
+                            float: 'right',
+                            fontSize: 18,
+                            margin: 3
+                        }
+                    }
+                ]
+            },
+            {
+                kind: 'AceEditor',
+                className: 'tabEditor',
+                options: {
+                    theme: 'solarized_dark',//'mono_industrial',
+                    fontFamily: 'Source Code Pro',
+                    mode: 'python',
+                    fontsize: 14,
+                    selectionStyle: 'none',
+                    maxLines: Infinity,
+                },
+                style: {
+                    height: '100%',
+                }
+            },
+            {
+                kind: 'box',
+                className: 'playCodeBox',
+                children: [
+                    {
+                        kind: 'box', //gutter
+                        style: {
+                            width: 45,
+                            height: '100%',
+                            lineHeight: '20px',
+                            textAlign: 'right',
+                            paddingRight: 8,
+                            background: '#11303D',
+                            color: '#CCE2ED',
+                            fontSize: 14
+                        }
+                    },
+                    {
+                        kind: 'box', // content
+                        className:'playCode_content',
+                    }
+                ]
+            }, 
+            {
+                kind : 'box',
+                className: 'codeBtnBox off', //기본값은 감추기
+                children: [
+                    {
+                        kind: 'box', //기능버튼
+                        children: [
+                            {
+                                kind: 'span',
+                                className: "material-symbols-outlined",
+                                text: 'restart_alt',
+                                onClick: 'resetTabEditor'
+                            },
+                            {
+                                kind: 'span',
+                                className: "material-symbols-outlined",
+                                text: 'backspace',
+                                onClick : 'backSpaceCode'
+                            },
+                            {
+                                kind: 'span',
+                                className: "material-symbols-outlined runCodeBlockBtn",
+                                text: 'play_arrow',
+                                onClick: 'resultByCodebtn'
+                            }
+                        ]
+                    },
+                    {
+                        kind: 'box', //코드버튼
+                    }
+                ]
+            }
+        ]
+    },
+    codeBlock: {
+        kind: 'box',
+        className: 'codeBlock'
+    },
+    codeBtn:  {
+        kind: 'box',
+        className: 'codebtn',
+        onClick : 'onSelectCodeBlock'
+    },
     aceEditor : {
         kind : 'box',
+        className:'lessonCompEditor',
         style: {
-            width: '95%',
-            height: 300,
-            borderRadius: 6,
-            overflow: 'hidden',
+            width: '100%',
+            height: '100%',//300,
+            // borderRadius: 6,
+            // overflow: 'hidden',
             padding: '10px 0px',
             background: '#282A35',
             marginTop: 10
@@ -439,26 +669,28 @@ const lesson = {
                 kind: 'box',
                 style: {
                     position: 'absolute',
-                    top: $('.bookEditor').top() + 30,
+                    // top: $('.bookEditor').top() + 30,
+                    bottom : '-33px',
                     right: 5,
-                    width: 75,
+                    width: 96,
                     fontSize: 22
                 },
                 children: [
                     {
                         kind: 'box',
                         className: 'scaleBtn',
-                        text: '+',
-                        onClick : e => {
+                        text: 'A',
+                        onClick : e => { 
                             const curSize = $(e.target).parent().prev()[0].aceEditor.getFontSize();
                             $(e.target).parent().prev()[0].aceEditor.setFontSize(curSize+1);
                         }
                     },
                     {
                         kind: 'box',
-                        text: '-',
+                        text: 'A',
+                        style: {fontSize: 15, paddingTop: 8},
                         className: 'scaleBtn',
-                        onClick : e => {
+                        onClick : e => { 
                             const curSize = $(e.target).parent().prev()[0].aceEditor.getFontSize();
                             $(e.target).parent().prev()[0].aceEditor.setFontSize(curSize-1);
                         }
@@ -542,13 +774,13 @@ const lesson = {
                         text: 'close',
                         onClick : e => {
                             $(e.target).parent().removeClass('on');
+                            $('.lessonWindow')[0].style.paddingTop = '45px';
                         },
                         style: {
                             position: 'absolute',
-                            right: 20,
-                            margin: 10,
+                            right: 0,
                             fontSize: 40,
-                            zIndex: 11,
+                            zIndex: 50,
                             cursor: 'pointer'
                         }
                     },
@@ -578,25 +810,10 @@ const lesson = {
                                 kind: 'box', //문제
                                 className: 'quizQuestion',
                                 text : '문제는 무엇입니다. ',
-                                style: {
-                                    width: '90%',
-                                    padding: 20,
-                                    color: 'white',
-                                    fontSize: 35,
-                                    textAlign: 'left',
-                                    wordBreak: 'keep-all'
-                                }
                             },
                             {
                                 kind: 'box', //객관식 보기문항
                                 className: 'quizExamples',
-                                style: {
-                                    width: '90%',
-                                    padding: 20,
-                                    color: 'white',
-                                    fontSize: 28,
-                                    textAlign: 'left',
-                                },
                             },
                             {
                                 kind: 'input', //주관식 입력

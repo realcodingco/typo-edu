@@ -4,6 +4,7 @@ let favoriteStyle = JSON.parse(localStorage.getItem("style")) || [];
 let totalCourse = getTotalCourseData();
 let previewBox, contentList, editBox;
 document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
+var clipboard;
 appendMakeBook();
 
 /**
@@ -19,12 +20,13 @@ function appendMakeBook(){
     }
     
     if(bookData) { // localstorage bookData가 있으면 교재 선택상자 option 추가
+        console.log('get local');
         Object.keys(bookData).forEach(id => {
             $("#bookSelect").append(`<option value="${id}">${bookData[id].title}</option>`);
         });
     }
     else { // localstorage bookData가 없으면, json 파일 데이터 가져오기
-        bookData = {};
+        bookData = {}; console.log('get json');
         getJsonData('./lecture/course.json', json => {
             Object.keys(json).forEach(function(crs) {
                 const books = json[crs].books;
@@ -61,7 +63,8 @@ function appendMakeBook(){
 function appendStyleUnit(style){
     let line = BX.component(edit.styleUnit).appendTo($('.favoriteList')[0]);
     line.html(`<font style="${style}">즐겨찾기</font>`);
-    line[0].onclick = e => {
+    line[0].onclick = e => { 
+        clipboard = new ClipboardJS('.favorite');
         let idx = e.target.tagName == 'DIV' ? $(e.target).index() : $(e.target).parent().index();
         let copied = favoriteStyle[idx];
         if(window.navigator.clipboard) {
@@ -69,7 +72,8 @@ function appendStyleUnit(style){
                 await window.navigator.clipboard.writeText(copied);
             }, 300);
         } else {
-            toastr.success('콘솔을 확인하세요.');
+            $(e.currentTarget).attr('data-clipboard-text', copied);
+            toastr.success('클립보드로 복사되었습니다.');
             console.log(copied);
         }
     }
@@ -226,7 +230,7 @@ function manageCourse(e) {
     // 코스 선택 option 추가
     Object.keys(totalCourse).forEach((cid) => {
         $("#courseSelect").append(`<option value="${cid}">${totalCourse[cid].title}</option>`);
-    })
+    });
     
     // 저장버튼 클릭이벤트 
     $(popWindow).find('button')[0].onclick = e => {
@@ -387,6 +391,15 @@ function colletData(target) { // 추가버튼을 기준으로
         data.example = examples;
     }
 
+    if(name == 'cardQuiz') {
+        let examples = [];
+        const textareas = $($(parent[1]).find('.finalQuizExample')[0]).find('textarea');
+        for(let example of textareas) {
+            if(example.value) examples.push(example.value);
+        }
+        data.example = examples;
+    }
+
     return data;
 }
 
@@ -448,7 +461,7 @@ function loadEditTool(e) {
 
     const component = BX.component(editInput[selected]).appendTo(target);
     if(selected == 'image') { //교재별 이미지 경로 문자열 자동완성 - 파일명만 입력하면 되도록, 이미지는 교재폴더 안에 업로드
-        $(target).find('input[name=src]')[0].value = `./lecture/crs_code/${location.hash.slice(1)}/`;
+        $(target).find('input[name=src]')[0].value = `./lecture/L019442/${location.hash.slice(1)}/`;
     }
 
     const idBox = $(component).find('.progressIdbox')[0]; // id가 필요한 컴포넌트의 경우, 랜덤 id 부여
@@ -544,6 +557,7 @@ function createPage(e) {
  * @param {*} e 
  */
 function savePageData(e){
+    clipboard = new ClipboardJS('.savePageButton');
     // 데이터 수집
     let isSave = confirm('저장하시겠습니까?');
     const modifiedData = JSON.parse(JSON.stringify(bookData));
@@ -567,17 +581,18 @@ function savePageData(e){
         } 
         else {
             saveBookData(modifiedData);
-            toastr.success('저장되었습니다');
             bookData = modifiedData;
             const copied = JSON.stringify(bookData[location.hash.slice(1)].pages);
 
             if(window.navigator.clipboard){
                 setTimeout(async() => {
+                    toastr.success('저장되어 클립보드로 복사되었습니다.');
                     await window.navigator.clipboard.writeText(copied);
                 }, 1000);
             }
             else {
-                toastr.success('콘솔을 확인하세요.');
+                $(e.target).attr('data-clipboard-text', copied);
+                toastr.success('저장되어 클립보드로 복사되었습니다.');//클립보드 복사로..
                 console.log(copied);
             }
             
@@ -589,7 +604,7 @@ function savePageData(e){
  * 교재 선택 onChange이벤트
  * @param {*} e 
  */
-function loadPage(e) {
+function loadPage(e) { console.log(totalCourse)
     previewBox.empty();
     contentList.empty();
     const target = $('#bookSelect')[0];

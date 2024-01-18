@@ -17,28 +17,10 @@ const learn = {
         children: [
             {
                 kind: 'box',
-                style : {
-                    width: 380,
-                    height: 580,
-                    border: '14px solid', //#584A52
-                    borderRadius: 10,
-                    margin: '30px 20px 0px 50px'
-                },
                 children: [
                     {
                         kind: 'box',
                         className: 'appWindow',
-                        style : {
-                            width: 362-10,//302,
-                            height: 563-11,//502,
-                            background: 'white',
-                            border: 0,
-                            overflow: 'auto',
-                            textAlign:'center',
-                            backgroundImage: "url('./lecture/ci.png')",
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'center'
-                        },
                     },
                     {
                         kind: 'box',
@@ -94,6 +76,15 @@ const learn = {
                     },
                     
                 ]
+            },
+            {
+                kind: 'button',
+                text: 'Back',
+                onClick: e => {
+                    if(e.target == e.currentTarget) {
+                        $('.emulator').hide();
+                    }
+                },
             }
         ]
     },
@@ -134,7 +125,7 @@ const learn = {
                             width:'auto',
                             marginLeft: 13,
                             marginTop: 8,
-                            fontSize: 11,
+                            fontSize: 8,
                             color: '#FFF899',
                             padding: '2px 10px',
                             borderRadius: 8,
@@ -146,23 +137,6 @@ const learn = {
                         kind: 'box',
                         className: 'fn-btn',
                         children: [
-                            // {
-                            //     kind: 'box',
-                            //     children: [
-                            //         {
-                            //             kind: 'span',
-                            //             className: 'material-symbols-outlined',
-                            //             text: 'share',
-                            //             children: [
-                                            
-                            //             ]
-                            //         },
-                            //         {
-                            //             kind: 'p',
-                            //             text: '공유'
-                            //         }
-                            //     ]
-                            // },
                             {
                                 kind: 'box',
                                 style: {display: 'none'},
@@ -213,15 +187,15 @@ const learn = {
                 style: {
                     position: 'absolute',
                     top: $('.aceEditor').top() + 30,
-                    right: 5,
-                    width: 75,
+                    right: 0,
+                    width: 96,
                     fontSize: 22
                 },
                 children: [
                     {
                         kind: 'box',
                         className: 'scaleBtn',
-                        text: '+',
+                        text: 'A',
                         onClick : e => {
                             const curSize = $('.aceEditor')[0].aceEditor.getFontSize();
                             $('.aceEditor')[0].aceEditor.setFontSize(curSize+1);
@@ -229,7 +203,7 @@ const learn = {
                     },
                     {
                         kind: 'box',
-                        text: '-',
+                        html: '<font size=3>A</font>',
                         className: 'scaleBtn',
                         onClick : e => {
                             const curSize = $('.aceEditor')[0].aceEditor.getFontSize();
@@ -238,40 +212,6 @@ const learn = {
                     }
                 ]
             }
-            // {
-            //     kind: 'box', //가이드 카드
-            //     style: {
-            //         display: 'none'
-            //     },
-            //     children: [
-            //         {
-            //             kind:'box',
-            //             style: {
-            //                 width: 20,
-            //                 height: 18,
-            //                 // background: 'white',
-            //                 marginLeft: 35,
-            //                 borderLeft : '12px solid transparent',
-            //                 borderBottom: '18px solid white',
-            //                 borderRight : '12px solid transparent',
-            //             }
-            //         },
-            //         {
-            //             kind:'box',
-            //             className: 'codingCard',
-            //             style: {
-            //                 background: 'white',
-            //                 width: 'calc(100% - 20px)',
-            //                 borderRadius: 10,
-            //                 height : 'auto',
-            //                 margin: '-6px 10px 0px 10px',
-            //                 padding: 10,
-            //                 textAlign: 'center',
-            //             },
-            //         }
-
-            //     ]
-            // }
         ]
     },
     quizGuide: {
@@ -286,6 +226,7 @@ const learn = {
                 kind: 'box',
                 style: {
                     display: 'flex',
+                    flexDirection: 'column',
                     margin: '30px 0',
                     flexWrap: 'wrap',
                     width: '100%'
@@ -295,7 +236,6 @@ const learn = {
                         kind: 'box',
                         text: '• 문제구성 : 객관식 20문항',
                         style: {
-                            width:'40%',
                             flex: 1
                         }
                     },
@@ -303,7 +243,6 @@ const learn = {
                         kind: 'box',
                         text: '• 응시시간 : 총 60분',
                         style: {
-                            width:'40%',
                             flex: 1
                         }
                     }
@@ -318,39 +257,57 @@ const learn = {
                 }
             },
             {
-                kind: 'p',
-                html: '응시 기회는 <font color=#2DD8FF>단 1회</font>로, 최종제출 후에는 어떠한 경우라도 재응시 할 수 없습니다.'
-            },
-            {
-                kind: 'p',
-                text: '학습기간 내에 원하는 시간에 응시할 수 있습니다.'
-            },
-            {
-                kind: 'p',
-                html: '응시 제한 시간은 <font color=#2DD8FF>초기 열람 시간을 기준으로 60분</font>이며,<br>응시 중 제한시간이 초과되거나 학습종료일 자정이 되면 자동으로 제출됩니다.'
-            },
-            {
-                kind : 'p',
-                html: '응시 페이지를 벗어나거나 비정상 종료되었더라도<br>제한시간이 남아 있다면 재입장 및 계속 응시가 가능합니다.'
-            },
-            {
-                kind : 'p',
-                html : '모든 문제의 풀이를 마친 후, 페이지 하단 <font color = yellowgreen>"제출하기" 녹색 버튼을 클릭</font>해야 최종 제출이 완료됩니다.'
-            },
-            {
-                kind : 'p',
-                html : '아래의 <font color=#2DD8FF>시작하기</font>를 클릭하면 퀴즈 응시가 시작되며, 제한시간 타이머가 작동합니다.'
-            },
-            {
-                kind : 'button',
-                text : '시작하기',
+                kind: 'box',
                 style: {
-                    background: '#2DD8FF',
-                    border: 0,
-                    borderRadius: 8,
-                    padding: '10px 50px',
-                    marginTop: 20
-                }
+                    textAlign: 'left',
+                    width: 'auto',
+                    margin: '30px auto'
+                },
+                children: [
+                    {
+                        kind: 'p',
+                        html: '• 응시 기회는 <font color=#2DD8FF>단 1회</font>로, 최종제출 후에는 어떠한 경우라도 재응시 할 수 없습니다.'
+                    },
+                    {
+                        kind: 'p',
+                        text: '• 학습기간 내에 원하는 시간에 응시할 수 있습니다.'
+                    },
+                    {
+                        kind: 'p',
+                        html: '• 응시 제한 시간은 <font color=#2DD8FF>초기 열람 시간을 기준으로 60분</font>이며, 응시 중 제한시간이 초과되거나 학습종료일 자정이 되면 자동으로 제출됩니다.'
+                    },
+                    {
+                        kind : 'p',
+                        html: '• 응시 페이지를 벗어나거나 비정상 종료되었더라도 제한시간이 남아 있다면 재입장 및 계속 응시가 가능합니다.'
+                    },
+                    {
+                        kind : 'p',
+                        html : '• 모든 문제의 풀이를 마친 후, 페이지 하단 <font color = yellowgreen>"제출하기" 녹색 버튼을 클릭</font>해야 최종 제출이 완료됩니다.'
+                    },
+                    {
+                        kind : 'p',
+                        html : '• 아래의 <font color=#2DD8FF>시작하기</font>를 클릭하면 퀴즈 응시가 시작되며, 제한시간 타이머가 작동합니다.'
+                    },
+                ]
+            },
+            {
+                kind: 'box',
+                style: {
+                    width: '100%'
+                },
+                children: [
+                    {
+                        kind : 'button',
+                        text : '시작하기',
+                        style: {
+                            background: '#2DD8FF',
+                            border: 0,
+                            borderRadius: 8,
+                            padding: '10px 50px',
+                            marginTop: 20
+                        }
+                    }
+                ]
             }
         ]
         
@@ -417,6 +374,7 @@ const learn = {
                         // className: 'bookNav',
                         text : '문제에서 정답에 해당하는 보기문항을 클릭하세요.',
                         style:{
+                            width: 'auto',
                             fontSize: 12,
                             fontWeight: 300,
                             padding: 10,
@@ -459,7 +417,7 @@ const learn = {
                     top: 10,
                     right: 10,
                     color:'rgba(128,128,128,0.1)',
-                    zIndex: 3
+                    zIndex: 11
                 }
             },
             {
@@ -467,9 +425,9 @@ const learn = {
                 className: 'lessonBook',
             },
             {
-                kind: 'span',
+                kind: 'span', // 탑버튼
                 text: 'keyboard_double_arrow_up',
-                className: 'material-symbols-outlined',
+                className: 'material-symbols-outlined pageTopBtn',
                 onClick: e => {
                     $(e.target).prev().scrollTop({top: '0px', behavior: 'smooth'});
                 },
@@ -477,7 +435,7 @@ const learn = {
                     position: 'absolute',
                     right: 20,
                     bottom: 60,
-                    color:'gray'
+                    color:'gray',
                 }
             },
             {
@@ -487,7 +445,8 @@ const learn = {
                     {
                         kind: 'box',
                         style: {
-                            width: 'auto',
+                            width: 36,
+                            float: 'left'
                         },
                         children: [
                             {
@@ -524,7 +483,8 @@ const learn = {
             position: 'fixed',
             left: 0,
             top: 0,
-            background: 'rgba(0,0,0,0.7)'
+            background: 'rgba(0,0,0,0.9)',
+            zIndex: 100
         },
 
         children: [
@@ -559,6 +519,24 @@ const learn = {
     navLabel : {
         kind: 'label',
         className: 'navLabel',
+    },
+    wheelTabBtn : {
+        kind: 'box',
+        className: 'wheelTabBox',
+        children : [
+            {
+                kind: 'box',
+                className: 'wheelTabBtn',
+                id: 'tabUP',
+                text: '▲',
+            },
+            {
+                kind: 'box',
+                className: 'wheelTabBtn',
+                id: 'tabDOWN',
+                text: '▼',
+            }
+        ]
     }
 }
 const learnWindow = {
@@ -571,7 +549,7 @@ const learnWindow = {
                 children: [
                     learn.editor,
                     learn.emulator
-                ]
+                ],
             },
             learn.consolewindow,
         ]
