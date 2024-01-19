@@ -211,6 +211,23 @@ const learn = {
                         }
                     }
                 ]
+            },
+            {
+                kind: 'button',
+                className: 'autoCodeBtn',
+                text: 'Auto',
+                style: {
+                    position: 'absolute',
+                    right: 10,
+                    bottom: 10
+                },
+                onClick : e => { //오토코드 입력 기능
+                    const targetId = e.target.dataset.id;
+                    if(targetId) {
+                        const autoCode = JSON.parse(localStorage.getItem('autos'))[targetId];
+                        $('.editSection .aceEditor')[0].aceEditor.setValue(autoCode);
+                    }
+                }
             }
         ]
     },

@@ -1435,6 +1435,18 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
                 }
             },
             {
+                kind: 'textarea',
+                name :'autoCode',
+                placeholder: '정답코드 입력',
+                style: {
+                    width: '95%',
+                    height: 70,
+                    margin: '5px auto',
+                    padding: 5,
+                    outline: 'none'
+                }
+            },
+            {
                 kind: 'input',
                 name: 'targetLine',
                 placeholder: '포커스 라인(숫자)',
@@ -1502,6 +1514,18 @@ const editInput = { // 교재 컨텐츠 컴포넌트 생성을 위한 데이터 
                 kind: 'textarea',
                 name :'bgCode',
                 placeholder: '배경코드 입력',
+                style: {
+                    width: '95%',
+                    height: 70,
+                    margin: '5px auto',
+                    padding: 5,
+                    outline: 'none'
+                }
+            },
+            {
+                kind: 'textarea',
+                name :'autoCode',
+                placeholder: '정답코드 입력',
                 style: {
                     width: '95%',
                     height: 70,

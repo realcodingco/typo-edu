@@ -11,7 +11,7 @@ toastr.options = {
 };
 
 var bgAudio = new Audio();
-
+let autos = {};
 /**
  * 
  * @param {object} el 
@@ -591,7 +591,16 @@ function createComponent(unit) {
         const targetLine = unit.targetLine;
         const bg = BX.component(lesson.direction).padding(8);;
         bg.children()[0].innerHTML = unit.text;
-        bg.children()[1].onclick = e => {
+        if(unit.autoCode){
+            bg.children()[1].className = codeId; //코드id를 class로 지정
+            autos[codeId] = unit.autoCode; 
+            localStorage.setItem('autos', JSON.stringify(autos));
+        }
+        
+        bg.children()[1].onclick = e => { 
+            const targetId = e.target.className;
+            $('.autoCodeBtn')[0].dataset.id = targetId;
+
             //에디터 열어주기.
             if(e.target.value == '에디터 열기') {
                 typingCount = 0;
@@ -707,6 +716,9 @@ function createComponent(unit) {
         const btn = BX.component(lesson.appBtn).margin(8);;
         btn[0].value = `${compName} 앱 보기`;
         btn[0].onclick = e => {
+            if(window.innerWidth < 900) {
+                toastr.info('앱 실습입니다. 미리보기 창을 닫고 계속 진행하세요.');
+            }
             $('.emulator')[0].style.display = 'block';
             $('.appWindow').empty();
             BX.components[compName].bx().appendTo($('.appWindow')[0]);
@@ -719,8 +731,17 @@ function createComponent(unit) {
         const targetLine = unit.targetLine;
         const bg = BX.component(lesson.practiceDirection).padding(8);;
         bg.children()[0].innerHTML = unit.text;
+        if(unit.autoCode){
+            bg.children()[1].className = codeId; //코드id를 class로 지정
+            autos[codeId] = unit.autoCode; 
+            localStorage.setItem('autos', JSON.stringify(autos));
+        }
+
         bg.children()[1].onclick = e => {
             if(e.target.value == '에디터 열기') {
+                const targetId = e.target.className;
+                $('.autoCodeBtn')[0].dataset.id = targetId; //오토코드 대상 id 전달
+
                 typingCount = 0;
                 typingStart = false;
                 $('.lessonBook').next().hide();
@@ -918,8 +939,11 @@ function createComponent(unit) {
 function openPractice(targetApp, title, bgCode) { 
     const editor =  $('.ace_editor')[0].aceEditor;
     $('.emulator').addClass('active'); //앱실습 중 표시
-    if(window.innerWidth < 900) {
-        if(bgCode) $('.emulator').show(); 
+    if(window.innerWidth < 900) { //모바일이면
+        if(bgCode) {
+            if(!$('.emulator').is(':visible')) toastr.info('앱 실습입니다. 미리보기 창을 닫고 계속 진행하세요.');
+            $('.emulator').show(); 
+        }
     }
     else { //pc면 보여주기.
         $('.emulator').show(); 

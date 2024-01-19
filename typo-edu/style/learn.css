@@ -1185,6 +1185,7 @@ li.bookbox {
         width: 100%;
         height: 100%;
         max-width: 352px;
+        max-height: 552px;;
     }
     .emulator > button {
         display: block;
