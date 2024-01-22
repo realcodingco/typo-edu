@@ -316,7 +316,7 @@ pattern {
     margin-top: 0px;
 }
 .lessonBook {
-    height: 100%;
+    height: 100% !important;
     overflow-y: auto; /*일단 스크롤 안되도록. 모바일조정중*/
     overflow-x: hidden;
     font-family: var(--font);
@@ -997,6 +997,15 @@ span.listbtn {
     border: 10px solid #4C00BF;
     display: block;
     text-align: center;
+}
+.quizPopup .quizpaper {
+    width: 100%;
+    height: 100%;
+    padding: 20px 20px 80px 20px;
+    text-align: center;
+    font-family: IBM Plex Mono;
+    overflow: auto;
+    max-width: 1200px;
 }
 
 .quizbutton {

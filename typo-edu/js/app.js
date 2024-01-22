@@ -53,9 +53,9 @@
     }
     
     getUserData({groupId:groupId, crsStart:crsStart, mid:mid}, function(data) {
-        userData = data; console.log(userData);
+        userData = data;
         //입과 대상인지 확인
-        getEnroll(groupId, function(result) { 
+        getEnroll(groupId, function(result) {
             if(result) {
                 const courseData = Object.keys(userData).length != 0 ? userData.course[crs] : {};
 
@@ -75,7 +75,7 @@
                     };
                 }
                 else if(courseData && courseData.edustart == crsStart){ //계속 학습
-                    console.log('계속 학습', userData); 
+                    console.log('계속 학습'); 
                     init();
                     return;
                 }
@@ -562,7 +562,7 @@
             }
             else {
                 const crsEnd = YYYYMMDD(calcEndDate(crsStart));
-                getLotteEntrance(crsStart, crsEnd, function(result) {
+                getLotteEntrance(crsStart, crsEnd, function(result) { 
                     const target = result.filter(o => o.userId == mid && o.cpCourseCd == crs);
                     if(target.length == 1) {
                         fn(target[0]);

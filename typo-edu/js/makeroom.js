@@ -25,51 +25,58 @@ let clickedRunBtn = false;
     setVh();
 
     let allowPage = 0; //*** 진도체크 후, 열람가능 페이지 설정
-    const swiper = new Swiper('.swiper', {
-        init: false,
-        initialSlide: 0,
-        speed: 1000,
-        freeMode : false, 
-        // grabCursor: true,
-        allowSlideNext: false, // 기본적으로 오른쪽 스와이프는 제한, 페이지가 열린 후 부터 가능. 
-        effect: "creative",
-        activeIndex: allowPage,
-        observer: true,	// 추가
-        observeParents: true,
-        keyboard: {
-            enabled: true,
-            // onlyInViewport: true 
-        },
-        creativeEffect: { //3
-            prev: {
-              shadow: true,
-              translate: ["-20%", 0, -1],
-            },
-            next: {
-              translate: ["100%", 0, 0],
-            },
-        },
-        pagination: {
-            el: ".swiper-pagination",
-            type: "progressbar",
-        },
-        navigation: {
-            nextEl: ".swiper-button-next",
-            prevEl: ".swiper-button-prev",
-        },
-    });
-    swiper.on('init', console.log('start'));
-    swiper.on('slideChange', onSlideChange); //슬라이드 변경 이벤트
-    swiper.on('activeIndexChange', onSliderFirstMove); // 다음 페이지 넘어가기 제어 sliderFirstMove
-    swiper.on('keyPress', (swiper, keyCode) => { // 키사용시에도 슬라이드 변경 이벤트 적용
-        switch(keyCode) {
-            case 37:
-            case 39:
-                onSlideChange();
-        }
-    });
-    window.swiper = swiper;
+    let swiper;
 
+    function setSwiper() {
+        swiper = new Swiper('.swiper', {
+            init: false,
+            slidesPerView: 1,
+            spaceBetween: 100,
+            initialSlide: 0,
+            speed: 800,
+            freeMode : false, 
+            autoHeight: true,
+            // grabCursor: true,
+            allowSlideNext: false, // 기본적으로 오른쪽 스와이프는 제한, 페이지가 열린 후 부터 가능. 
+            // effect: "creative",
+            activeIndex: allowPage,
+            observer: true,	// 추가
+            observeParents: true,
+            keyboard: {
+                enabled: true,
+                // onlyInViewport: true 
+            },
+            creativeEffect: { //3
+                prev: {
+                  shadow: true,
+                  translate: ["-20%", 0, -1],
+                },
+                next: {
+                  translate: ["100%", 0, 0],
+                },
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                type: "progressbar",
+            },
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+        });
+        swiper.on('init', console.log('start'));
+        swiper.on('slideChange', onSlideChange); //슬라이드 변경 이벤트
+        swiper.on('activeIndexChange', onSliderFirstMove); // 다음 페이지 넘어가기 제어 sliderFirstMove
+        swiper.on('keyPress', (swiper, keyCode) => { // 키사용시에도 슬라이드 변경 이벤트 적용
+            switch(keyCode) {
+                case 37:
+                case 39:
+                    onSlideChange();
+            }
+        });
+        window.swiper = swiper;
+    }
+    
     const decoded = atob(location.search.slice(4));
     const params = decoded.split('&');
     const searchParams = (arr, keyword) => {
@@ -115,7 +122,6 @@ let clickedRunBtn = false;
         document.documentElement.style.setProperty("--bgColor", courseData[crs].page_bgColor); //배경색 설정
         if(courseData[crs].page_bgImage) document.documentElement.style.setProperty("--bgimage", courseData[crs].page_bgImage);
 
-        // if(bookType != 'card') 
         window.addEventListener('resize', setVh);
         init();
     });
@@ -247,12 +253,10 @@ let clickedRunBtn = false;
                     $('.editSection > :not(:last-child)').hide();
                     $('.consolewindow').hide();
                 }
-                else {
+                else { //모던자바스크립트인 경우
                     if(window.innerWidth > 1200) {
                         $('.lessonBook').css('max-width', '1200px');
-                    }
-                    if(window.innerWidth < 720) {
-                        // $('.editSection').css('zoom', '0.8');
+                        $('.editSection').css('max-width', '1200px');
                     }
                 }
             }
@@ -281,9 +285,9 @@ let clickedRunBtn = false;
                         lessonBook(pageData, json.title).appendTo($('.lessonBook')[0]);
                         
                         setTimeout(() => {
+                            setSwiper();
                             swiper.init();
                             checkStudied();
-                            //if(bookType == 'card' && window.innerWidth > 900) $('.lessonWindow').addClass('card');
                         }, 500);
                         
 
@@ -336,8 +340,6 @@ let clickedRunBtn = false;
                                 const msg = box().appendTo($(swiper.clickedSlide).children()[0]).fontSize(10).textColor('aqua').textAlign('center').text('다시 생각해보세요');
                                 setTimeout(function(){$(msg).remove();}, 1200);
                             }
-                            
-                            // $(e.target).parent().remove();
                         });
                     }
                 })
@@ -361,7 +363,7 @@ let clickedRunBtn = false;
                     else if(targetApp) {
                         $('.emulator').show(); 
                         const app = BX.components[targetApp];
-                        // const code = app.appCode; console.log(code, 25);
+                        // const code = app.appCode;
                         editSection.find('.appTitle')[0].innerText = app.appTitle;
                         app.bx().appendTo($('.appWindow')[0]);
                         
@@ -390,7 +392,7 @@ let clickedRunBtn = false;
         }
         $(swiper.clickedSlide).find('.codebtn').removeClass('clicked');
         $(swiper.clickedSlide).find('.codebtn').removeAttr('data-idx');
-        const initCode = $(swiper.clickedSlide).find('.lessonTabEditor')[0].dataset.code;//localStorage.getItem('editor_initial_code', initCode);
+        const initCode = $(swiper.clickedSlide).find('.lessonTabEditor')[0].dataset.code;
         $(swiper.clickedSlide).find('.ace_editor')[0].aceEditor.setValue(initCode);
     }
 
@@ -404,8 +406,8 @@ let clickedRunBtn = false;
         
         const resetEditorValue = function(idx) {
             $(codeBlocks[idx]).text('');
-            $(`.codebtn[data-idx="${idx}"]`).removeClass('clicked');
-            $(`.codebtn[data-idx="${idx}"]`).removeAttr('data-idx');
+            $(swiper.clickedSlide).find(`.codebtn[data-idx="${idx}"]`).removeClass('clicked');
+            $(swiper.clickedSlide).find(`.codebtn[data-idx="${idx}"]`).removeAttr('data-idx');
             
             //에디터 코드에 적용 : 
             let modifyCode = initCode;
@@ -413,7 +415,7 @@ let clickedRunBtn = false;
             let buffer = 0;
             for(let j=0; j<initCode.length; j++) {
                 if(initCode[j] == '^') { //선택된 텍스트로 바꿔주기.
-                    const targetBtn = $(`.codebtn[data-idx="${count}"]`)[0];
+                    const targetBtn = $(swiper.clickedSlide).find(`.codebtn[data-idx="${count}"]`)[0];
                     const txt = targetBtn ? targetBtn.innerText : '^';
                     modifyCode = modifyCode.replaceAt(j + buffer, txt);
                     buffer = txt.length > 1 ? buffer + txt.length - 1 : buffer;
@@ -549,8 +551,11 @@ let clickedRunBtn = false;
             switchBtn();
         }
     }
-
-    function showPythonResult(e) { //재실행이므로.. 기존 결과는 초기화
+    /**
+     * 카드교재 output 영역 재실행 버튼 클릭 이벤트
+     * @param {*} e 
+     */
+    function showPythonResult(e) { //재실행이므로 기존 결과는 초기화
         $(swiper.clickedSlide).find('.outputWindow :nth-child(2)').empty();
         $(swiper.clickedSlide).find('.spreadsheetRun').remove();
         //배경코드가 있으면 합치기
@@ -570,7 +575,7 @@ let clickedRunBtn = false;
      */
     function hideContinueBtn(target) {
         const continuebtn = $(target).find('.cardBook_pageNextBtn');
-        continuebtn.hide();
+        continuebtn.hide(); 
         $(swiper.slides[swiper.snapIndex]).find('>:nth-child(1)').css('height', '100%');
     }
 
@@ -599,7 +604,11 @@ let clickedRunBtn = false;
     /**
      * 교재 슬라이드가 바뀔때마다 실행되는 이벤트 
      */
+    let isSlideChange = false;
     function onSlideChange() { 
+        if(isSlideChange) return; 
+
+        isSlideChange = true;
         const iframe = $(swiper.clickedSlide).find('iframe');
         if(iframe.length != 0) {  //교재 내 타이머 clearTimer를 위한.
             iframe[0].remove();
@@ -627,6 +636,7 @@ let clickedRunBtn = false;
         if($(studyVideo).hasClass('vjs-playing')) {
             videojs.getPlayer(studyVideo.id).pause();
         }
+        setTimeout(() => {isSlideChange = false;}, 500); 
     }
 
     /**
@@ -753,15 +763,15 @@ let clickedRunBtn = false;
             if(isSubmit){
                 if(solve.length > 0) {
                     let unsolved = solve.filter(o => Object.keys(o).length == 0);
-                    if(unsolved.length > 0) { // 풀었지만 다 안푼거
+                    if(unsolved.length > 0) { // 풀이내역은 있지만 미완료
                         toastr.error('풀지 않은 문제가 있습니다.<br>모든 문제를 푼 후, 다시 시도하세요.');
                         restart();
                     }
-                    else { // 다 풀었네
+                    else { // 모든문제 풀이완료
                         finalSubmit();
                     }
                 } 
-                else { //  푼게 없잖아
+                else { 
                     toastr.error('제출할 내용이 없습니다.<br>모든 문제를 풀고 다시 시도하세요.');
                     restart();
                 }
@@ -1266,7 +1276,7 @@ let clickedRunBtn = false;
 
                     if(nextBtn.length > 0 && studied.includes(nextBtn[0].id)) {
                         studiedPage.push(idx);
-                        $(nextBtn).parent().remove();
+                        $(nextBtn).parent().remove(); 
                         $(el).find('>:nth-child(1)').css('height', '100%');
                     }
                     if(confirmBtn.length > 0 && studied.includes(confirmBtn[0].id)) {
@@ -1303,12 +1313,15 @@ let clickedRunBtn = false;
                 allowPage = studiedPage.length != 0 ? Math.max(...studiedPage) + 1 : 0; //열람가능한 페이지 설정
                 swiper.activeIndex = allowPage;
                 
-                if(totalSlides != finalPageIdx) { //학습이 완료되지 않은 상태.
+                if(totalSlides != finalPageIdx) { //학습이 완료되지 않은 상태. 
                     swiper.slideTo(0);
                     swiper.slideTo(finalPageIdx);
                     $('.slidePagenation')[0].options[finalPageIdx].selected = true;
                     const codebtnBox = $(swiper.slides[finalPageIdx]).find('.codeBtnBox'); 
                     if(codebtnBox.length > 0 && !codebtnBox.hasClass('off')) hideContinueBtn(swiper.slides[swiper.snapIndex]);
+                }
+                else {
+                    swiper.slideTo(0);
                 }
             }
             else { //모던자바 진도체크 요소들
@@ -1560,9 +1573,8 @@ let clickedRunBtn = false;
         else {
             result.html(msg);
         }
-        
 
-        $('.swiper-slide-active > :nth-child(1)').animate({
+        $('.swiper-slide-active > :nth-child(1)').animate({ //결과에 따라 자동스크롤
             scrollTop: $('.swiper-slide-active > :nth-child(1)')[0].scrollHeight
         }, 400);
 
@@ -1577,6 +1589,8 @@ let clickedRunBtn = false;
         if (e.key == 's')  isSkey = false;
     }
     document.onkeydown = function(e) {
+        if(bookType == 'card') return;
+        
         if(e.key == 'Control') isCtrl = true; 
         if(e.key == 's') isSkey = true; 
         if(isSkey && isCtrl) {

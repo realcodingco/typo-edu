@@ -787,14 +787,6 @@ const lesson = {
                     {
                         kind: 'box',
                         className: 'quizpaper',
-                        style: {
-                            width: '100%',
-                            height: '100%',
-                            padding: '20px 20px 80px 20px',
-                            textAlign: 'center',
-                            fontFamily: 'IBM Plex Mono',
-                            overflow: 'auto'
-                        },
                         children: [
                             {
                                 kind: 'box',
