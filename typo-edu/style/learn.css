@@ -373,6 +373,7 @@ pattern {
     font-family: var(--font);
     font-size: 14px;
     border-color: #2e6c6e;
+    outline: none;
 }
 .tabEditor{
     font-family: Source Code Pro, sans-serif;
@@ -1022,10 +1023,10 @@ span.listbtn {
     margin-top: 7px;
 }
 
-.quizSubmitBtn {
-    padding: 8px 50px;
-    margin: 20px auto;
-    font-size: 26px;
+.quizSubmitBtn, .quizCloseBtn {
+    padding: 5px 40px;
+    margin: 20px 0px;
+    font-size: 22px;
     border: 0px;
     color: white;
     box-shadow: 0 5px 1px #8D5BD8;
@@ -1034,7 +1035,7 @@ span.listbtn {
     display: block;
     border-radius: 50px;
 }
-.quizSubmitBtn:hover {
+.quizSubmitBtn:hover, .quizCloseBtn:hover {
     box-shadow: none;
     margin-top: 27px;
 }
@@ -1132,7 +1133,7 @@ li.bookbox {
 }
 
 @media (min-width: 900px) {
-    .lessonWindow.card {
+    .lessonWindow.cardBook {
         left: calc(50% - 600px);
         max-width: 1200px;
     }

@@ -768,22 +768,7 @@ const lesson = {
                 kind: 'box',
                 className : 'quizPopup',
                 children: [
-                    {
-                        kind: 'span',
-                        className: 'material-symbols-outlined',
-                        text: 'close',
-                        onClick : e => {
-                            $(e.target).parent().removeClass('on');
-                            $('.lessonWindow')[0].style.paddingTop = '45px';
-                        },
-                        style: {
-                            position: 'absolute',
-                            right: 0,
-                            fontSize: 40,
-                            zIndex: 50,
-                            cursor: 'pointer'
-                        }
-                    },
+                    
                     {
                         kind: 'box',
                         className: 'quizpaper',
@@ -820,12 +805,49 @@ const lesson = {
                                 }
                             },
                             {
-                                kind : 'button',
-                                className: 'quizSubmitBtn',
-                                text : '제출'
+                                kind: 'box',
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    height: 90
+                                },
+                                children: [
+                                    {
+                                        kind : 'button',
+                                        className: 'quizCloseBtn',
+                                        text : '닫기',
+                                        onClick : e => {
+                                            $('.quizPopup').removeClass('on');
+                                            $('.lessonWindow')[0].style.paddingTop = '45px';
+                                        },
+                                    },
+                                    {
+                                        kind : 'button',
+                                        className: 'quizSubmitBtn',
+                                        text : '제출'
+                                    },
+                                    
+                                ]
                             }
+                            
                         ]
-                    }
+                    },
+                    // {
+                    //     kind: 'span',
+                    //     className: 'material-symbols-outlined',
+                    //     text: 'close',
+                    //     onClick : e => {
+                    //         $('.quizPopup').removeClass('on');
+                    //         $('.lessonWindow')[0].style.paddingTop = '45px';
+                    //     },
+                    //     style: {
+                    //         position: 'absolute',
+                    //         right: 10,
+                    //         fontSize: 40,
+                    //         zIndex: 50,
+                    //         cursor: 'pointer'
+                    //     }
+                    // },
                 ]
             }
         ]

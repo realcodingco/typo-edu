@@ -431,8 +431,8 @@ const learn = {
                 },
                 style: {
                     position: 'absolute',
-                    top: 10,
-                    right: 10,
+                    top: 50,
+                    right: 20,
                     color:'rgba(128,128,128,0.1)',
                     zIndex: 11
                 }

@@ -12,17 +12,22 @@ let clickedRunBtn = false;
     let courseData, lecBooks;
     let autoSubmit; // 퀴즈자동제출 여부.
     
-    const setVh = () => { // 교재영역 접고 열때 화면위로 밀리는 현상 대응
+    const setVh = () => { 
+        // 교재영역 접고 열때 화면위로 밀리는 현상 대응
         document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
         document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
-        if(bookType == 'card' && window.innerWidth > 1200) {
+        
+        if(bookType == 'card' && window.innerWidth > 1200) { 
             $('.lessonWindow').css('left', 'calc(50% - 600px)'); //교재가 한 가운데 오도록
         }
         else {
             $('.lessonWindow').css('left', '0px');
         }
+
+        if(bookType == 'card' && window.innerWidth > 720) {
+            $('.swiper-wrapper').css('height', '100%');
+        }
     };
-    setVh();
 
     let allowPage = 0; //*** 진도체크 후, 열람가능 페이지 설정
     let swiper;
@@ -31,7 +36,14 @@ let clickedRunBtn = false;
         swiper = new Swiper('.swiper', {
             init: false,
             slidesPerView: 1,
-            spaceBetween: 100,
+            spaceBetween: 0,
+            // breakpoints: {
+            //     900 : {
+            //         slidesPerView: 2,
+            //         spaceBetween: 40,
+            //         slidesPerGroup: 2
+            //     }
+            // },
             initialSlide: 0,
             speed: 800,
             freeMode : false, 
@@ -67,11 +79,12 @@ let clickedRunBtn = false;
         swiper.on('init', console.log('start'));
         swiper.on('slideChange', onSlideChange); //슬라이드 변경 이벤트
         swiper.on('activeIndexChange', onSliderFirstMove); // 다음 페이지 넘어가기 제어 sliderFirstMove
-        swiper.on('keyPress', (swiper, keyCode) => { // 키사용시에도 슬라이드 변경 이벤트 적용
+        swiper.on('keyPress', (swiper, keyCode) => { // 방향키 사용시에도 슬라이드 변경 이벤트 적용
             switch(keyCode) {
                 case 37:
                 case 39:
                     onSlideChange();
+                    break;
             }
         });
         window.swiper = swiper;
@@ -241,8 +254,7 @@ let clickedRunBtn = false;
                 BX.component(learn.lessonWindow).appendTo(editSection[0]); // 교재페이지
                 if(bookType == 'card') { //파이썬 초급인경우
                     if(window.innerWidth > 1200) { //pc인 경우,
-                        $('.lessonWindow').css('left', 'calc(50% - 600px)');
-                        $('.lessonWindow').css('max-width', '1200px');
+                        $('.lessonWindow').addClass('cardBook'); //max-width 1200, 가운데 정렬 적용
                     }
 
                     $('.lessonWindow > span:nth-child(1)').hide(); // js에디터 확대/축소 아이콘 숨기기
@@ -259,6 +271,8 @@ let clickedRunBtn = false;
                         $('.editSection').css('max-width', '1200px');
                     }
                 }
+
+                setVh();
             }
 
             //교재 붙이기
@@ -446,28 +460,27 @@ let clickedRunBtn = false;
         const iframeSrc = './pyrunner.html?console_target=onConsoleFromChild&p=_local_once_code_&code_lang=python312&code_name=_local_preview_src_';
         
         if(mode == 'spreadsheet') { // 스프레드시트 실행모드인 경우,
-            const runBox = BX.component(lesson.spreadsheetRunBox).appendTo($('.swiper-slide-active > :nth-child(1)')[0]);
+            const runBox = BX.component(lesson.spreadsheetRunBox).appendTo($(swiper.clickedSlide).find('> :nth-child(1)')[0]); //.swiper-slide-active 
             $(runBox).find('iframe')[0].src = iframeSrc;
 
             setTimeout(()=> { 
                 const tableHeight = $(runBox).find('iframe').contents().find('#view div > div').height();
                 $(runBox).find('iframe')[0].height = tableHeight;
                 $(runBox).css('opacity', 1);
-                $('.swiper-slide-active > :nth-child(1)').animate({
-                    scrollTop: $('.swiper-slide-active > :nth-child(1)')[0].scrollHeight
+                $(swiper.clickedSlide).find('> :nth-child(1)').animate({ //.swiper-slide-active 
+                    scrollTop: $(swiper.clickedSlide).find('> :nth-child(1)')[0].scrollHeight //.swiper-slide-active 
                 }, 400);
 
-                if(window.innerWidth < 900) { // 셀 박스 편집되지 않도록 : 모바일에서 키보드자판 생성 
-                    const cellbox = $(runBox).find('iframe').contents().find('#view div > div > span[contenteditable=true]');
-                    // $(cellbox).attr('contenteditable', 'false');
-                }
-                
+                // if(window.innerWidth < 900) { // 셀 박스 편집되지 않도록 : 모바일에서 키보드자판 생성  - 키보드 사용 실습이 있으므로 보류
+                //     const cellbox = $(runBox).find('iframe').contents().find('#view div > div > span[contenteditable=true]');
+                //     $(cellbox).attr('contenteditable', 'false');
+                // }
             }, 500);
             
             
         }
         else {
-            const runBox = BX.component(lesson.defaultRunBox).appendTo($('.swiper-slide-active > :nth-child(1)')[0]);
+            const runBox = BX.component(lesson.defaultRunBox).appendTo($(swiper.clickedSlide).find('> :nth-child(1)')[0]); //.swiper-slide-active 
             $(runBox).find('iframe')[0].src = iframeSrc;
             $(runBox).find('iframe')[0].height = 0;
         }
@@ -537,7 +550,7 @@ let clickedRunBtn = false;
         else {// 정답임. 결과 보여주고, 계속하기 버튼 노출
             if(e.target.dataset.run == 'true') { 
                 const runMode = e.target.dataset.mode;
-                const curSlide = $('.swiper-slide-active > :nth-child(1)')[0];
+                const curSlide = $(swiper.clickedSlide).find('> :nth-child(1)')[0];
                 const outputWin = $(curSlide).find('.outputWindow').length == 0 ? BX.component(lesson.outputWindow).appendTo(curSlide) : $('.outputWindow');
                 $(outputWin).children()[0].dataset.mode = runMode;
                 //배경코드가 있으면 합치기
@@ -606,7 +619,7 @@ let clickedRunBtn = false;
      */
     let isSlideChange = false;
     function onSlideChange() { 
-        if(isSlideChange) return; 
+        if(isSlideChange) return;
 
         isSlideChange = true;
         const iframe = $(swiper.clickedSlide).find('iframe');
@@ -632,8 +645,8 @@ let clickedRunBtn = false;
         if(codebtnBox.length > 0 && !codebtnBox.hasClass('off')) hideContinueBtn(swiper.slides[swiper.snapIndex]);
 
         //넘겨진 페이지의 재생중인 동영상은 정지
-        const studyVideo = $(swiper.clickedSlide).find('.video-js')[0];
-        if($(studyVideo).hasClass('vjs-playing')) {
+        const studyVideo = $('.swiper-slide-active').find('.video-js')[0];
+        if($(studyVideo).hasClass('vjs-playing')) { 
             videojs.getPlayer(studyVideo.id).pause();
         }
         setTimeout(() => {isSlideChange = false;}, 500); 
@@ -660,7 +673,7 @@ let clickedRunBtn = false;
             if(recordSecond == 0) {
                 recordSecond = 30;
 
-                let intermediateData = {};//userData.course[crs].quiz.solve.detail 퀴즈 풀이내용, 남은 시간 저장
+                let intermediateData = {};// 퀴즈 풀이내용, 남은 시간 저장
                 intermediateData[`course.${crs}.quiz.solve.detail`] = userData.course[crs].quiz.solve.detail;
                 intermediateData[`course.${crs}.quiz.testTime`] = userData.course[crs].quiz.testTime;
                 updateUserData({groupId: groupId, mid : mid, data: intermediateData, crsStart: crsStart});
@@ -1002,35 +1015,17 @@ let clickedRunBtn = false;
         solveDetail.correct = checkAnswer(target.dataset.q) == target.dataset.no;
         solveDetail.question = quest[target.dataset.q].question;
         solveDetail.time = Date.now(); // 보기 문항을 클릭한 시점
-        //기록  보기를 선택할 때마다 
+        //기록 보기를 선택할 때마다 
         if(!userData.course[crs].quiz.solve) userData.course[crs].quiz.solve = {};
         if(!userData.course[crs].quiz.solve.detail) userData.course[crs].quiz.solve.detail = new Array(20).fill({});
         userData.course[crs].quiz.solve.detail[target.dataset.q-1] = solveDetail;
-        
+
+        let intermediateData = {};
+        intermediateData[`course.${crs}.quiz.solve.detail`] = userData.course[crs].quiz.solve.detail;
+        intermediateData[`course.${crs}.quiz.testTime`] = userData.course[crs].quiz.testTime;
+        updateUserData({groupId: groupId, mid : mid, data: intermediateData, crsStart: crsStart});
     }
     
-    let wheeltab = 0;
-    function wheelUpDown(e) {
-        if($('.lessonBook').is(":animated")) return;
-        const curScrollPosition = $('.lessonBook').scrollTop();
-        let section = ((curScrollPosition/window.innerHeight) / 1).toFixed(1);
-
-        if(Math.trunc(section)+1 != wheeltab) {
-            wheeltab = Math.trunc(section);
-        }
-
-        if(e.target.id == 'tabDOWN' ) {
-            // if(page == 4) return;
-            wheeltab++;
-        } else if(e.target.id == 'tabUP') {
-            // if(page == 1) return;
-            wheeltab--;
-        }
-        var posTop = (window.innerHeight - 80) * wheeltab;
-        $('.lessonBook').animate({scrollTop : posTop}, 'fast');
-    
-        
-    }
     /**
      * pageData로 교재 생성
      * @param {object} pageData 배열
@@ -1152,7 +1147,7 @@ let clickedRunBtn = false;
                 $('.lessonBook').addClass('swiper');
                 $(b).addClass('swiper-wrapper');
                 $(wrap).addClass('swiper-slide');
-                box().appendTo(b)[0].className = 'swiper-pagination';
+                
             }
         }
 
@@ -1169,7 +1164,10 @@ let clickedRunBtn = false;
                     }, 2000);
                 }
             }
-            if(bookType == 'card') appendSlidePagenation();
+            if(bookType == 'card') {
+                appendSlidePagenation();
+                box().appendTo($('.lessonBook')[0])[0].className = 'swiper-pagination';
+            }
         }
         else {
             appendNav(); 
@@ -1560,10 +1558,10 @@ let clickedRunBtn = false;
         msg = msg.replaceAll('\n', '<br/>');
 
         //outputWindow 노출..
-        const curSlide = $('.swiper-slide-active > :nth-child(1)')[0]; 
+        const curSlide = $(swiper.clickedSlide).find('> :nth-child(1)')[0];  //.swiper-slide-active 
         const outputWin = $(curSlide).find('.outputWindow').length == 0 ? BX.component(lesson.outputWindow).appendTo(curSlide) : $(curSlide).find('.outputWindow');
         const printBox = $(outputWin).find('>:nth-child(2)');
-
+        console.log(curSlide, outputWin,'--')
         const result = box().appendTo(printBox[0]).html(msg).textColor(msg.includes('에러')?'#e65800':'white').borderBottom('0.7px dashed gray').padding('5px 0px');
         if(msg.startsWith('<')) {
             msg = msg.replaceAll('<br/>', '\n');
@@ -1574,8 +1572,8 @@ let clickedRunBtn = false;
             result.html(msg);
         }
 
-        $('.swiper-slide-active > :nth-child(1)').animate({ //결과에 따라 자동스크롤
-            scrollTop: $('.swiper-slide-active > :nth-child(1)')[0].scrollHeight
+        $(swiper.clickedSlide).find('> :nth-child(1)').animate({ //.swiper-slide-active  결과에 따라 자동스크롤
+            scrollTop: $(swiper.clickedSlide).find('> :nth-child(1)')[0].scrollHeight //.swiper-slide-active 
         }, 400);
 
     }
