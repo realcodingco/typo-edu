@@ -453,6 +453,7 @@ const learn = {
                     right: 20,
                     bottom: 60,
                     color:'gray',
+                    
                 }
             },
             {

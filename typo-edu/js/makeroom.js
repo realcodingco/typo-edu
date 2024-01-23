@@ -17,11 +17,20 @@ let clickedRunBtn = false;
         document.documentElement.style.setProperty('--vh', `${window.innerHeight}px`);
         document.documentElement.style.setProperty('--halfHeight', `-${window.innerHeight/2}px`);
         
-        if(bookType == 'card' && window.innerWidth > 1200) { 
-            $('.lessonWindow').css('left', 'calc(50% - 600px)'); //교재가 한 가운데 오도록
+        document.documentElement.style.setProperty('--vw', `${window.innerWidth}px`);
+
+        if(bookType == 'card') { 
+            if(window.innerWidth > 1200) {
+                $('.lessonWindow').css('left', 'calc(50% - 600px)'); //교재가 한 가운데 오도록
+            }
+            else {
+                $('.lessonWindow').css('left', '0px');
+            }   
         }
         else {
-            $('.lessonWindow').css('left', '0px');
+            if(window.innerWidth > 1200) {
+                $('.editSection').css('max-width', '1200px');
+            }
         }
 
         if(bookType == 'card' && window.innerWidth > 720) {
@@ -924,6 +933,10 @@ let clickedRunBtn = false;
 
         try {
             eval(code);
+            if($('.consolewindow div').length > 0) {
+                $('.consolewindow')[0].click();
+            }
+            
         } 
         catch(error) {
             print(`<font color=red>[ERROR] ${error.message}</font>`);
@@ -1561,7 +1574,7 @@ let clickedRunBtn = false;
         const curSlide = $(swiper.clickedSlide).find('> :nth-child(1)')[0];  //.swiper-slide-active 
         const outputWin = $(curSlide).find('.outputWindow').length == 0 ? BX.component(lesson.outputWindow).appendTo(curSlide) : $(curSlide).find('.outputWindow');
         const printBox = $(outputWin).find('>:nth-child(2)');
-        console.log(curSlide, outputWin,'--')
+        
         const result = box().appendTo(printBox[0]).html(msg).textColor(msg.includes('에러')?'#e65800':'white').borderBottom('0.7px dashed gray').padding('5px 0px');
         if(msg.startsWith('<')) {
             msg = msg.replaceAll('<br/>', '\n');

@@ -874,7 +874,12 @@ function createComponent(unit) {
                     toastr.success('2초 뒤에 다음 문제가 출제됩니다.', '', {timeOut: 2000});
                 } else {
                     toastr.success('마지막 문항입니다.<br>곧 창이 닫힙니다.');
-                    setTimeout(()=>{$('.quizPopup').removeClass('on');}, 3000);
+                    setTimeout(()=>{
+                        $('.quizPopup').removeClass('on');
+                        $('.pageTopBtn').show();
+                        $('.bookHeader').show();
+                        $('.lessonWindow')[0].style.paddingTop = '45px';
+                    }, 3000);
                 }
                 // 학습페이지 퀴즈 풀이 학습기록 하지 않음
                 setTimeout(() => { //정답,오답 알림 제거 후 다음 문제 생성
@@ -895,6 +900,9 @@ function createComponent(unit) {
             $(`#${e.target.name}`).addClass('on');
             //lessonWindow padding 일시적으로 0 처리
             $('.lessonWindow')[0].style.padding = 0;
+            //모바일에서 z-index 적용안됨으로 인한 감추기
+            $('.pageTopBtn').hide();
+            $('.bookHeader').hide();
         }
     }
     else if(component == 'cardQuiz') { // 카드타입교재(모바일) 보기선택 컴포넌트

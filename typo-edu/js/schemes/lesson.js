@@ -723,7 +723,7 @@ const lesson = {
                     width: 'calc(100% - 70px)',
                     textAlign: 'left',
                     color:'white',
-                    wordBreak: 'keep-all'
+                    // wordBreak: 'break-all'
                 }
             }
         ]
@@ -818,6 +818,8 @@ const lesson = {
                                         text : '닫기',
                                         onClick : e => {
                                             $('.quizPopup').removeClass('on');
+                                            $('.pageTopBtn').show();
+                                            $('.bookHeader').show();
                                             $('.lessonWindow')[0].style.paddingTop = '45px';
                                         },
                                     },

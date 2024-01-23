@@ -40,7 +40,7 @@
 .emulator {
     width: auto;
     display: none;
-    z-index: 19;
+    /* z-index: 19; */
 }
 .emulator > button {
     position: fixed;
@@ -982,13 +982,13 @@ span.listbtn {
     width: 0px;
     height: 0px;
     z-index: 100;
-    /*style*/
     /* background: rgba(102,0,255,1); */
     background-color: #6600ff;
     background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239150f9' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
     /* rgba(116,69,216,0.9); */
     box-shadow: 0 0 6px 1px rgb(0 0 0 / 30%);
     transition: 0.5s;
+    
 }
 .quizPopup.on {
     width: 100%; /*가로길이 설정은 여기서*/
@@ -998,6 +998,7 @@ span.listbtn {
     border: 10px solid #4C00BF;
     display: block;
     text-align: center;
+    
 }
 .quizPopup .quizpaper {
     width: 100%;
@@ -1132,6 +1133,12 @@ li.bookbox {
     opacity: 0;
 }
 
+[class*="dimensions"] {
+    max-width: 1200px !important;
+    width: 100% !important;
+    height: min(70%, calc(var(--vw) * 0.581));
+}
+
 @media (min-width: 900px) {
     .lessonWindow.cardBook {
         left: calc(50% - 600px);
@@ -1145,11 +1152,7 @@ li.bookbox {
         zoom: calc(1 / 1.5);
         margin: 0 auto;
     }
-    [class*="dimensions"] {
-        max-width: 1200px !important;
-        width: 100% !important;
-        height: 70%;
-    }
+    
 }
 @media (max-width: 900px) { /*모바일*/
     .swiper-slide .lessonCompImg {
@@ -1181,6 +1184,7 @@ li.bookbox {
         height: 100%;
         text-align: center;
         background: rgba(0,0,0,0.6);
+        z-index: 19;
     }
     .emulator > div:nth-child(1) {
         margin: 0px;
